@@ -1,0 +1,27 @@
+{
+  "exec": "node scripts/serve.mjs",
+  "watch": [
+    "app",
+    "components",
+    "lib",
+    "public",
+    "next.config.ts",
+    ".env",
+    "package.json"
+  ],
+  "ext": "ts,tsx,js,mjs,css,json,png,svg,env",
+  "ignore": [
+    ".next/**",
+    ".next-dev/**",
+    ".next-e2e/**",
+    "node_modules/**",
+    "storage/**",
+    "tests/**"
+  ],
+  "delay": 2500,
+  "signal": "SIGTERM",
+  "env": {
+    "NODEMON": "1"
+  },
+  "verbose": false
+}

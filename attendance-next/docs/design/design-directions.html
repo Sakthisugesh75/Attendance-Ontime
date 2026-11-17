@@ -1,0 +1,649 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Design Directions</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..800&family=Martian+Mono:wght@400..700&family=Schibsted+Grotesk:wght@400..800&family=Atkinson+Hyperlegible+Next:wght@400..700&family=Atkinson+Hyperlegible+Mono:wght@400..700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+/* ---------- Page chrome (neutral, so the directions stand out) ---------- */
+:root{--pg-bg:#f2f2f0;--pg-fg:#1b1b1d;--pg-mute:#5e5f66;--pg-line:#dcdcd7;--pg-card:#fff;--pg-acc:#1b1b1d}
+.dark{--pg-bg:#111214;--pg-fg:#ececef;--pg-mute:#9b9ca4;--pg-line:#2a2b30;--pg-card:#18191c;--pg-acc:#ececef}
+*{box-sizing:border-box}
+body{margin:0;background:var(--pg-bg);color:var(--pg-fg);font:15px/1.5 Inter,system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+.chrome{position:sticky;top:0;z-index:50;display:flex;flex-wrap:wrap;align-items:center;gap:12px;padding:12px 24px;background:color-mix(in srgb,var(--pg-bg) 90%,transparent);backdrop-filter:blur(8px);border-bottom:1px solid var(--pg-line)}
+.chrome h1{font-size:16px;margin:0;font-weight:600}
+.chrome p{margin:0;color:var(--pg-mute);font-size:13px}
+.tabs{display:flex;gap:4px;margin-left:auto;background:var(--pg-card);border:1px solid var(--pg-line);border-radius:10px;padding:4px}
+.tabs button,.theme{border:0;background:none;color:var(--pg-mute);font:600 13px Inter,sans-serif;padding:8px 14px;border-radius:7px;cursor:pointer}
+.tabs button[aria-selected=true]{background:var(--pg-acc);color:var(--pg-bg)}
+.theme{border:1px solid var(--pg-line);background:var(--pg-card);color:var(--pg-fg)}
+:focus-visible{outline:2px solid #2f6fed;outline-offset:2px}
+main{max-width:1320px;margin:0 auto;padding:28px 24px 64px}
+.dir{display:none}
+.dir.on{display:block}
+@media (prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}}
+
+/* Intro block shared layout */
+.intro{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);gap:28px;align-items:start;margin-bottom:28px}
+.intro h2{margin:0 0 8px}
+.intro .idea{max-width:62ch;margin:0 0 14px}
+.facts{display:grid;gap:10px;font-size:14px}
+.facts b{font-weight:600}
+.sw{display:flex;flex-wrap:wrap;gap:8px;margin-top:4px}
+.sw span{display:flex;align-items:center;gap:8px;font-size:12px;padding:4px 10px 4px 4px;border-radius:999px;border:1px solid var(--pg-line);background:var(--pg-card)}
+.sw i{width:22px;height:22px;border-radius:50%;border:1px solid rgba(0,0,0,.12);display:block}
+.stage{display:grid;grid-template-columns:400px minmax(0,1fr);gap:24px;align-items:start}
+.stage+.wide{margin-top:24px}
+.label{font:600 12px Inter,sans-serif;color:var(--pg-mute);margin:0 0 8px}
+.phone{border-radius:40px;padding:11px;background:#0c0c0d;box-shadow:0 30px 60px -30px rgba(0,0,0,.45)}
+.screen{border-radius:30px;overflow:hidden;height:780px;display:flex;flex-direction:column;position:relative}
+.sbar{display:flex;justify-content:space-between;padding:12px 24px 2px;font:600 12px Inter,sans-serif;font-variant-numeric:tabular-nums}
+.scroll{flex:1;overflow:auto;padding:6px 18px 18px}
+.tabbar{display:grid;grid-template-columns:repeat(4,1fr);padding:8px 6px 18px;font:600 12px/1 Inter,sans-serif;text-align:center}
+.tabbar span{display:flex;flex-direction:column;align-items:center;gap:5px}
+.tabbar svg{width:22px;height:22px}
+.panel{border-radius:14px;overflow:hidden}
+.scrollx{overflow-x:auto}
+svg.i{width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex:none}
+@media (max-width:1000px){.intro,.stage{grid-template-columns:1fr}.phone{max-width:400px}}
+
+/* =====================================================================
+   A · TIME CARD
+   ===================================================================== */
+[data-dir=a]{
+  --stock:#eceee6;--card:#fafbf6;--ink:#1e2a4a;--ink2:#4b5571;--rule:#c9cfbf;--red:#c2312a;--green:#2d6a3b;--grey:#6c7066;--onink:#fafbf6;
+  font-family:Archivo,system-ui,sans-serif;font-variation-settings:"wdth" 100;
+}
+.dark [data-dir=a]{--stock:#131722;--card:#1b2130;--ink:#e6eaf4;--ink2:#a5adc2;--rule:#313a4f;--red:#ff7a6b;--green:#7fd492;--grey:#9aa0ad;--onink:#131722}
+[data-dir=a] .mono{font-family:"Martian Mono",ui-monospace,monospace;font-variant-numeric:tabular-nums}
+[data-dir=a] .cond{font-variation-settings:"wdth" 72}
+[data-dir=a] .screen{background:var(--stock);color:var(--ink)}
+[data-dir=a] .a-greet{font-size:13px;color:var(--ink2);margin:8px 0 2px}
+[data-dir=a] .a-clock{font:500 46px/1 "Martian Mono",monospace;letter-spacing:-.04em;margin:6px 0 2px}
+[data-dir=a] .a-clock small{font-size:16px;color:var(--ink2);letter-spacing:0}
+[data-dir=a] .tc{margin-top:16px;background:var(--card);border:1.5px solid var(--ink);border-radius:6px;position:relative;overflow:hidden}
+[data-dir=a] .tc-head{display:flex;justify-content:space-between;align-items:flex-end;padding:12px 14px 10px;border-bottom:1.5px solid var(--ink)}
+[data-dir=a] .tc-head b{font-size:18px;font-variation-settings:"wdth" 72;font-weight:800;letter-spacing:.01em}
+[data-dir=a] .tc-head span{font-size:12px;color:var(--ink2)}
+[data-dir=a] .tc-row{display:grid;grid-template-columns:52px 1fr 1fr 64px;border-bottom:1px solid var(--rule);min-height:40px;align-items:center}
+[data-dir=a] .tc-row:last-child{border-bottom:0}
+[data-dir=a] .tc-row>*{padding:0 8px;border-right:1px solid var(--rule);align-self:stretch;display:flex;align-items:center}
+[data-dir=a] .tc-row>*:last-child{border-right:0;justify-content:flex-end}
+[data-dir=a] .tc-row.head{min-height:28px;font:700 11px Archivo;font-variation-settings:"wdth" 72;color:var(--ink2);letter-spacing:.04em}
+[data-dir=a] .tc-row.today{background:color-mix(in srgb,var(--ink) 6%,transparent)}
+[data-dir=a] .day{font-weight:700;font-variation-settings:"wdth" 72}
+[data-dir=a] .stamp{font:600 15px "Martian Mono",monospace;transform:rotate(-1.5deg);display:inline-block;opacity:.92;letter-spacing:-.02em}
+[data-dir=a] .stamp.red{color:var(--red)}
+[data-dir=a] .stamp.fresh{animation:stamp .45s cubic-bezier(.2,.9,.3,1.3)}
+@keyframes stamp{0%{transform:scale(1.8) rotate(-6deg);opacity:0;filter:blur(2px)}60%{opacity:1}100%{transform:scale(1) rotate(-1.5deg);opacity:.92}}
+[data-dir=a] .a-btn{width:100%;height:64px;margin-top:16px;border:0;border-radius:6px;background:var(--ink);color:var(--onink);font:700 19px Archivo;font-variation-settings:"wdth" 90;display:flex;align-items:center;justify-content:center;gap:10px;cursor:pointer;box-shadow:0 3px 0 color-mix(in srgb,var(--ink) 60%,#000)}
+[data-dir=a] .a-btn:active{transform:translateY(3px);box-shadow:none}
+[data-dir=a] .a-btn.done{background:transparent;color:var(--ink2);border:1.5px dashed var(--rule);box-shadow:none;cursor:default}
+[data-dir=a] .a-note{font-size:13px;color:var(--ink2);margin:10px 2px 0}
+[data-dir=a] .a-note b{color:var(--ink)}
+[data-dir=a] .tabbar{background:var(--card);border-top:1.5px solid var(--ink);color:var(--ink2)}
+[data-dir=a] .tabbar .on{color:var(--ink)}
+[data-dir=a] .tabbar .on svg{stroke-width:2.6}
+[data-dir=a] .panel{background:var(--card);border:1.5px solid var(--ink);border-radius:6px;color:var(--ink)}
+[data-dir=a] .ptitle{display:flex;justify-content:space-between;align-items:center;padding:14px 18px;border-bottom:1.5px solid var(--ink)}
+[data-dir=a] .ptitle b{font-size:22px;font-variation-settings:"wdth" 72;font-weight:800}
+[data-dir=a] .ptitle span{font-size:13px;color:var(--ink2)}
+[data-dir=a] table{width:100%;border-collapse:collapse;font-size:14px}
+[data-dir=a] th{font:700 11px Archivo;font-variation-settings:"wdth" 72;letter-spacing:.04em;color:var(--ink2);text-align:left;padding:8px 14px;border-bottom:1px solid var(--rule)}
+[data-dir=a] td{padding:10px 14px;border-bottom:1px solid var(--rule);white-space:nowrap}
+[data-dir=a] td.r,[data-dir=a] th.r{text-align:right}
+[data-dir=a] tr:last-child td{border-bottom:0}
+[data-dir=a] .who b{display:block;font-weight:600}
+[data-dir=a] .who span{font-size:12px;color:var(--ink2)}
+[data-dir=a] .late{font:600 11px "Martian Mono";color:var(--red);margin-left:6px}
+[data-dir=a] .mark{display:inline-flex;align-items:center;gap:6px;font:700 12px Archivo;font-variation-settings:"wdth" 80;padding:3px 8px;border:1.5px solid currentColor;border-radius:3px;transform:rotate(-1deg)}
+[data-dir=a] .mark.P{color:var(--ink)}[data-dir=a] .mark.L,[data-dir=a] .mark.A,[data-dir=a] .mark.M{color:var(--red)}
+[data-dir=a] .mark.A{border-style:double;border-width:3px}
+[data-dir=a] .mark.LV{color:var(--green)}[data-dir=a] .mark.HO,[data-dir=a] .mark.WO{color:var(--grey)}
+[data-dir=a] .mark.H{color:var(--ink);background:linear-gradient(135deg,transparent 50%,color-mix(in srgb,var(--ink) 14%,transparent) 50%)}
+[data-dir=a] .mark.Q{color:var(--ink2);border-style:dashed}
+[data-dir=a] .grid{border-collapse:separate;border-spacing:0}
+[data-dir=a] .grid td,[data-dir=a] .grid th{padding:0;border-bottom:1px solid var(--rule);border-right:1px solid var(--rule);text-align:center}
+[data-dir=a] .grid th{height:40px;font:700 11px Archivo;font-variation-settings:"wdth" 72;color:var(--ink2)}
+[data-dir=a] .grid th.today{background:var(--ink);color:var(--onink)}
+[data-dir=a] .grid td.name{text-align:left;padding:6px 12px;min-width:170px;position:sticky;left:0;background:var(--card);border-right:1.5px solid var(--ink)}
+[data-dir=a] .gc{width:34px;height:34px;display:grid;place-items:center;font:600 12px "Martian Mono";transform:rotate(-2deg)}
+[data-dir=a] .gc.L,[data-dir=a] .gc.A,[data-dir=a] .gc.M{color:var(--red)}
+[data-dir=a] .gc.A{font-weight:800;text-decoration:underline double}
+[data-dir=a] .gc.LV{color:var(--green)}[data-dir=a] .gc.WO,[data-dir=a] .gc.HO{color:var(--grey);font-weight:400}
+[data-dir=a] .gc.F{color:transparent}
+[data-dir=a] .statusrow{display:flex;flex-wrap:wrap;gap:10px;padding:16px 18px}
+
+/* =====================================================================
+   B · DAYLIGHT
+   ===================================================================== */
+[data-dir=b]{
+  --bg:#f3f6f5;--surf:#ffffff;--ink:#0e2a2b;--ink2:#47605f;--line:#d9e2e0;--band:#e3eeec;--act:#f2b21e;--onact:#0e2a2b;
+  --present:#1e7f6e;--late:#c2410c;--absent:#b91c3b;--leave:#6a55c9;--holiday:#2b77b3;--off:#8a9a98;--pending:#9a5a00;
+  font-family:"Schibsted Grotesk",system-ui,sans-serif;
+}
+.dark [data-dir=b]{--bg:#0b1615;--surf:#11211f;--ink:#e5efed;--ink2:#9db3b0;--line:#21403d;--band:#173230;--act:#f2b21e;--onact:#0e2a2b;
+  --present:#3fc2a6;--late:#ff8a4c;--absent:#ff6b86;--leave:#a796ff;--holiday:#6cb6f0;--off:#6f8784;--pending:#f2b21e}
+[data-dir=b] .num{font-variant-numeric:tabular-nums}
+[data-dir=b] .screen{background:var(--bg);color:var(--ink)}
+[data-dir=b] .b-greet{font-size:24px;line-height:30px;font-weight:700;letter-spacing:-.02em;margin:10px 0 0}
+[data-dir=b] .b-sub{color:var(--ink2);font-size:14px;margin:2px 0 0}
+[data-dir=b] .sky{margin-top:18px;background:var(--surf);border:1px solid var(--line);border-radius:22px;padding:18px 16px 16px}
+[data-dir=b] .b-time{display:flex;align-items:baseline;gap:8px}
+[data-dir=b] .b-time b{font-size:52px;line-height:1;font-weight:800;letter-spacing:-.04em;font-variant-numeric:tabular-nums}
+[data-dir=b] .b-time span{font-weight:700;color:var(--ink2)}
+[data-dir=b] .b-where{font-size:14px;color:var(--ink2);margin-top:6px}
+[data-dir=b] .track{position:relative;height:56px;margin:18px 4px 4px}
+[data-dir=b] .track .rail{position:absolute;left:0;right:0;top:24px;height:8px;border-radius:8px;background:var(--band)}
+[data-dir=b] .track .shift{position:absolute;top:24px;height:8px;border-radius:8px;background:color-mix(in srgb,var(--ink) 16%,transparent)}
+[data-dir=b] .track .worked{position:absolute;top:22px;height:12px;border-radius:12px;background:var(--present)}
+[data-dir=b] .track .sun{position:absolute;top:14px;width:28px;height:28px;margin-left:-14px;border-radius:50%;background:var(--act);box-shadow:0 0 0 6px color-mix(in srgb,var(--act) 28%,transparent)}
+[data-dir=b] .track .tick{position:absolute;top:42px;font-size:11px;color:var(--ink2);transform:translateX(-50%);font-variant-numeric:tabular-nums;white-space:nowrap}
+[data-dir=b] .b-btn{width:100%;height:64px;margin-top:14px;border:0;border-radius:18px;background:var(--act);color:var(--onact);font:800 19px "Schibsted Grotesk";display:flex;align-items:center;justify-content:center;gap:10px;cursor:pointer}
+[data-dir=b] .b-btn.out{background:var(--ink);color:var(--surf)}
+[data-dir=b] .b-btn.done{background:var(--band);color:var(--ink2);cursor:default}
+[data-dir=b] .b-facts{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:14px}
+[data-dir=b] .b-facts div{font-size:12px;color:var(--ink2)}
+[data-dir=b] .b-facts b{display:block;font-size:17px;color:var(--ink);font-variant-numeric:tabular-nums}
+[data-dir=b] .tabbar{background:var(--surf);border-top:1px solid var(--line);color:var(--ink2)}
+[data-dir=b] .tabbar .on{color:var(--ink)}
+[data-dir=b] .tabbar .on svg{fill:var(--act);stroke:var(--ink)}
+[data-dir=b] .panel{background:var(--surf);border:1px solid var(--line);border-radius:22px;color:var(--ink)}
+[data-dir=b] .ptitle{display:flex;justify-content:space-between;align-items:center;padding:18px 22px 6px}
+[data-dir=b] .ptitle b{font-size:22px;font-weight:800;letter-spacing:-.02em}
+[data-dir=b] .ptitle span{color:var(--ink2);font-size:14px}
+[data-dir=b] .axis,[data-dir=b] .rowb{display:grid;grid-template-columns:190px minmax(360px,1fr) 150px;gap:16px;align-items:center;padding:0 22px}
+[data-dir=b] .axis{height:30px;font-size:11px;color:var(--ink2);border-bottom:1px solid var(--line)}
+[data-dir=b] .axis .ax{position:relative;height:100%}
+[data-dir=b] .axis .ax span{position:absolute;bottom:6px;transform:translateX(-50%);white-space:nowrap;font-variant-numeric:tabular-nums}
+[data-dir=b] .axis .ax span:last-child{transform:translateX(-100%)}
+[data-dir=b] .rowb{min-height:58px;border-bottom:1px solid var(--line)}
+[data-dir=b] .rowb:last-child{border-bottom:0}
+[data-dir=b] .rowb .who b{display:block;font-weight:700}
+[data-dir=b] .rowb .who span{font-size:12px;color:var(--ink2)}
+[data-dir=b] .lane{position:relative;height:22px}
+[data-dir=b] .lane .shift{position:absolute;top:8px;height:6px;border-radius:6px;background:var(--band)}
+[data-dir=b] .lane .seg{position:absolute;top:3px;height:16px;border-radius:16px;background:var(--present)}
+[data-dir=b] .lane .seg.late{background:var(--late)}
+[data-dir=b] .lane .seg.open{background:repeating-linear-gradient(90deg,var(--present) 0 6px,transparent 6px 10px)}
+[data-dir=b] .lane .now{position:absolute;top:-4px;bottom:-4px;width:2px;background:var(--act);border-radius:2px}
+[data-dir=b] .lane .whole{position:absolute;top:3px;height:16px;border-radius:16px;left:0;right:0;display:flex;align-items:center;padding-left:12px;font-size:12px;font-weight:700}
+[data-dir=b] .times{text-align:right;font-size:14px;font-variant-numeric:tabular-nums}
+[data-dir=b] .times small{display:block;font-size:12px;color:var(--ink2)}
+[data-dir=b] .times .lt{color:var(--late);font-weight:700}
+[data-dir=b] .pill{display:inline-flex;align-items:center;gap:6px;font-size:13px;font-weight:700;padding:5px 12px 5px 8px;border-radius:999px;background:color-mix(in srgb,var(--c) 14%,var(--surf));color:var(--c)}
+[data-dir=b] .pill i{width:10px;height:10px;border-radius:50%;background:var(--c)}
+.dark [data-dir=b] .pill{background:color-mix(in srgb,var(--c) 18%,var(--surf))}
+[data-dir=b] .pill.pending{background:transparent;outline:1.5px dashed var(--c);outline-offset:-1.5px}
+[data-dir=b] .grid{border-collapse:separate;border-spacing:4px}
+[data-dir=b] .grid th{font-size:11px;font-weight:700;color:var(--ink2);height:30px}
+[data-dir=b] .grid th.today{color:var(--ink)}
+[data-dir=b] .grid th.today span{background:var(--act);color:var(--onact);border-radius:8px;padding:2px 5px}
+[data-dir=b] .grid td.name{padding-right:10px;min-width:160px;font-weight:700;position:sticky;left:0;background:var(--surf);font-size:14px}
+[data-dir=b] .hb{width:30px;height:38px;border-radius:9px;background:var(--band);position:relative;overflow:hidden;display:flex;align-items:flex-end;justify-content:center}
+[data-dir=b] .hb i{position:absolute;left:0;right:0;bottom:0;background:var(--c);opacity:.85}
+[data-dir=b] .hb b{position:relative;font-size:11px;font-weight:800;color:#fff;margin-bottom:3px;text-shadow:0 1px 1px rgba(0,0,0,.25)}
+[data-dir=b] .hb.empty b{color:var(--c);text-shadow:none;margin:auto}
+[data-dir=b] .statusrow{display:flex;flex-wrap:wrap;gap:8px;padding:6px 22px 20px}
+
+/* =====================================================================
+   C · MUSTER BOOK
+   ===================================================================== */
+[data-dir=c]{
+  --page:#f6f8fc;--paper:#ffffff;--rule:#d5dfee;--margin:#d23c3c;--ink:#13203b;--ink2:#46526b;--act:#2242c2;--onact:#ffffff;
+  --present:#1f7a4a;--absent:#c42b2b;--late:#8a5a00;--leave:#0f6b6b;--holiday:#4c62a3;--off:#6b7488;--pending:#7b3fa0;
+  font-family:"Atkinson Hyperlegible Next",system-ui,sans-serif;font-size:16px;
+}
+.dark [data-dir=c]{--page:#0e1320;--paper:#151c2c;--rule:#26314b;--margin:#ef6a6a;--ink:#e8edf7;--ink2:#a9b4cb;--act:#8ea2ff;--onact:#0e1320;
+  --present:#5fd59a;--absent:#ff8d8d;--late:#f3c45a;--leave:#5fd0d0;--holiday:#9fb2ff;--off:#8f99ae;--pending:#d6a4f5}
+[data-dir=c] .mono{font-family:"Atkinson Hyperlegible Mono",ui-monospace,monospace;font-variant-numeric:tabular-nums}
+[data-dir=c] .screen{background:var(--page);color:var(--ink)}
+[data-dir=c] .c-greet{font-size:22px;font-weight:700;margin:10px 0 0;line-height:1.25}
+[data-dir=c] .c-sub{color:var(--ink2);margin:2px 0 0;font-size:16px}
+[data-dir=c] .sheet{margin-top:16px;background:var(--paper);border-radius:10px;border:1px solid var(--rule);position:relative;
+  background-image:repeating-linear-gradient(var(--paper) 0 39px,var(--rule) 39px 40px);background-position:0 44px;padding-left:44px}
+[data-dir=c] .sheet::before{content:"";position:absolute;top:0;bottom:0;left:36px;width:2px;background:var(--margin);opacity:.75}
+[data-dir=c] .sheet-row{height:40px;display:flex;align-items:center;justify-content:space-between;padding-right:14px;gap:10px}
+[data-dir=c] .sheet-row.head{height:44px;font-weight:700}
+[data-dir=c] .sheet-row span{color:var(--ink2)}
+[data-dir=c] .sheet-row .write{font:700 20px "Atkinson Hyperlegible Mono";color:var(--act)}
+[data-dir=c] .sheet-row .write.fresh{animation:write .6s steps(8)}
+@keyframes write{from{clip-path:inset(0 100% 0 0)}to{clip-path:inset(0 0 0 0)}}
+[data-dir=c] .c-clock{font:700 40px "Atkinson Hyperlegible Mono";letter-spacing:-.02em}
+[data-dir=c] .c-btn{width:100%;min-height:64px;margin-top:16px;border:0;border-radius:12px;background:var(--act);color:var(--onact);font:700 19px "Atkinson Hyperlegible Next";display:flex;align-items:center;justify-content:center;gap:10px;cursor:pointer}
+[data-dir=c] .c-btn.out{background:var(--paper);color:var(--act);box-shadow:inset 0 0 0 2px var(--act)}
+[data-dir=c] .c-btn.done{background:var(--rule);color:var(--ink2);cursor:default}
+[data-dir=c] .c-help{font-size:15px;color:var(--ink2);margin:10px 2px 0}
+[data-dir=c] .tabbar{background:var(--paper);border-top:1px solid var(--rule);color:var(--ink2);font-family:"Atkinson Hyperlegible Next"}
+[data-dir=c] .tabbar span{font-size:13px}
+[data-dir=c] .tabbar .on{color:var(--act)}
+[data-dir=c] .panel{background:var(--paper);border:1px solid var(--rule);border-radius:10px;color:var(--ink)}
+[data-dir=c] .ptitle{display:flex;justify-content:space-between;align-items:baseline;padding:16px 20px 12px;border-bottom:2px solid var(--ink)}
+[data-dir=c] .ptitle b{font-size:22px}
+[data-dir=c] .ptitle span{color:var(--ink2);font-size:15px}
+[data-dir=c] table{width:100%;border-collapse:collapse;font-size:16px}
+[data-dir=c] th{font-size:14px;font-weight:700;color:var(--ink2);text-align:left;padding:10px 14px;border-bottom:1px solid var(--rule)}
+[data-dir=c] td{padding:0 14px;height:48px;border-bottom:1px solid var(--rule);white-space:nowrap}
+[data-dir=c] td.sn,[data-dir=c] th.sn{width:48px;text-align:right;color:var(--ink2);border-right:2px solid color-mix(in srgb,var(--margin) 75%,transparent)}
+[data-dir=c] td.r,[data-dir=c] th.r{text-align:right}
+[data-dir=c] .who b{font-weight:700}
+[data-dir=c] .who span{color:var(--ink2);font-size:14px;margin-left:8px}
+[data-dir=c] .late{color:var(--late);font-weight:700;font-size:14px;margin-left:6px}
+[data-dir=c] .rm{display:inline-flex;align-items:center;gap:8px;font-weight:700;color:var(--c)}
+[data-dir=c] .rm .m{display:inline-grid;place-items:center;min-width:30px;height:30px;padding:0 4px;font:700 14px "Atkinson Hyperlegible Mono";border-radius:6px;border:2px solid var(--c)}
+[data-dir=c] .rm .m.circle{border-radius:50%}
+[data-dir=c] .rm .m.under{border:0;border-bottom:3px solid var(--c);border-radius:0}
+[data-dir=c] .rm .m.dash{border-style:dashed}
+[data-dir=c] .grid{border-collapse:collapse}
+[data-dir=c] .grid th,[data-dir=c] .grid td{text-align:center;padding:0;border:1px solid var(--rule);height:40px;min-width:36px}
+[data-dir=c] .grid th{font-size:13px;color:var(--ink2)}
+[data-dir=c] .grid th.today{background:color-mix(in srgb,var(--act) 12%,var(--paper));color:var(--act)}
+[data-dir=c] .grid td.today{background:color-mix(in srgb,var(--act) 6%,var(--paper))}
+[data-dir=c] .grid td.name,[data-dir=c] .grid th.name{text-align:left;padding:0 12px;min-width:180px;position:sticky;left:0;background:var(--paper);border-right:2px solid color-mix(in srgb,var(--margin) 75%,transparent);font-weight:700}
+[data-dir=c] .gm{font:700 14px "Atkinson Hyperlegible Mono";color:var(--c)}
+[data-dir=c] .gm.circle{display:inline-grid;place-items:center;width:24px;height:24px;border:2px solid var(--c);border-radius:50%;font-size:12px}
+[data-dir=c] .gm.under{border-bottom:3px solid var(--c);padding:0 2px}
+[data-dir=c] .grid td.off{background:repeating-linear-gradient(-45deg,transparent 0 5px,color-mix(in srgb,var(--off) 18%,transparent) 5px 6px)}
+[data-dir=c] .statusrow{display:flex;flex-wrap:wrap;gap:14px 22px;padding:16px 20px}
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+<symbol id="i-in" viewBox="0 0 24 24"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><path d="m10 17 5-5-5-5"/><path d="M15 12H3"/></symbol>
+<symbol id="i-out" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="m16 17 5-5-5-5"/><path d="M21 12H9"/></symbol>
+<symbol id="i-check" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></symbol>
+<symbol id="i-home" viewBox="0 0 24 24"><path d="M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></symbol>
+<symbol id="i-cal" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></symbol>
+<symbol id="i-leave" viewBox="0 0 24 24"><path d="M13 8c0-2.8-2.2-5-5-5-2.8 0-5 2.2-5 5h4l-2 2"/><path d="M11 8c0-2.8 2.2-5 5-5 2.8 0 5 2.2 5 5h-4l2 2"/><path d="M12 8v14"/></symbol>
+<symbol id="i-note" viewBox="0 0 24 24"><path d="M13.4 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8.6z"/><path d="M14 2v6h6M8 13h8M8 17h5"/></symbol>
+<symbol id="i-pen" viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 1 1 3 3L7 19l-4 1 1-4z"/></symbol>
+</defs></svg>
+
+<header class="chrome">
+  <div><h1>Attendance Desk: three directions</h1><p>Same screens, three different ideas. Pick one and I'll build it into the app.</p></div>
+  <div class="tabs" role="tablist" aria-label="Design direction">
+    <button role="tab" aria-selected="true" data-tab="a">A. Time Card</button>
+    <button role="tab" aria-selected="false" data-tab="b">B. Daylight</button>
+    <button role="tab" aria-selected="false" data-tab="c">C. Muster Book</button>
+  </div>
+  <button class="theme" id="theme" aria-pressed="false">Dark</button>
+</header>
+
+<main>
+<!-- ============================== A ============================== -->
+<section class="dir on" data-dir="a" id="dir-a" role="tabpanel">
+  <div class="intro">
+    <div>
+      <h2 style="font:800 44px/1 Archivo;font-variation-settings:'wdth' 68;letter-spacing:-.01em">Time Card</h2>
+      <p class="idea">The mechanical punch clock, made digital. Every punch is <b>stamped</b> into an IN or OUT slot on a card, and late punches print in red, just like the old time clock did. Staff already know how to read a time card, so nothing needs explaining.</p>
+      <div class="facts">
+        <div><b>Signature:</b> the stamp. Tap "Punch in" and the time lands in today's slot with a small stamp impression.</div>
+        <div><b>Type:</b> Archivo (condensed for headings, like a printed card) with Martian Mono only for stamped times.</div>
+        <div><b>Feels:</b> sturdy, familiar, a little industrial. Good for factories, shops and offices that used punch cards.</div>
+      </div>
+    </div>
+    <div>
+      <p class="label">Palette</p>
+      <div class="sw">
+        <span><i style="background:#eceee6"></i>Card stock #ECEEE6</span>
+        <span><i style="background:#fafbf6"></i>Card #FAFBF6</span>
+        <span><i style="background:#1e2a4a"></i>Stamp ink #1E2A4A</span>
+        <span><i style="background:#c2312a"></i>Late red #C2312A</span>
+        <span><i style="background:#2d6a3b"></i>Leave green #2D6A3B</span>
+        <span><i style="background:#c9cfbf"></i>Rule #C9CFBF</span>
+      </div>
+    </div>
+  </div>
+  <div class="stage">
+    <div>
+      <p class="label">Employee phone · tap the button</p>
+      <div class="phone"><div class="screen">
+        <div class="sbar"><span class="clk-s">9:41</span><span>5G</span></div>
+        <div class="scroll">
+          <p class="a-greet">Good morning, Meena</p>
+          <div class="a-clock clk-big">09:41<small>:22</small></div>
+          <div style="font-size:13px;color:var(--ink2)" class="dt">Thursday, 12 Nov 2026</div>
+          <div class="tc" aria-label="This week's time card">
+            <div class="tc-head"><b>Time card</b><span class="mono" style="font-size:11px">EMP004 · Week 46</span></div>
+            <div class="tc-row head"><span>Day</span><span>In</span><span>Out</span><span>Hours</span></div>
+            <div class="tc-row"><span class="day">Mon</span><span class="stamp">09:24</span><span class="stamp">18:41</span><span class="mono" style="font-size:12px">9:17</span></div>
+            <div class="tc-row"><span class="day">Tue</span><span class="stamp red">09:52</span><span class="stamp">18:36</span><span class="mono" style="font-size:12px">8:44</span></div>
+            <div class="tc-row"><span class="day">Wed</span><span class="stamp">09:18</span><span class="stamp">18:30</span><span class="mono" style="font-size:12px">9:12</span></div>
+            <div class="tc-row today"><span class="day">Thu</span><span id="a-in"></span><span id="a-out"></span><span class="mono" style="font-size:12px" id="a-hrs"></span></div>
+            <div class="tc-row"><span class="day">Fri</span><span></span><span></span><span></span></div>
+          </div>
+          <button class="a-btn" id="a-btn"><svg class="i" style="width:24px;height:24px"><use href="#i-in"/></svg><span>Punch in</span></button>
+          <p class="a-note" id="a-note">Shift 9:30 AM to 6:30 PM. On time until 9:45 AM.</p>
+        </div>
+        <nav class="tabbar"><span class="on"><svg class="i"><use href="#i-home"/></svg>Home</span><span><svg class="i"><use href="#i-cal"/></svg>Attendance</span><span><svg class="i"><use href="#i-leave"/></svg>Leave</span><span><svg class="i"><use href="#i-note"/></svg>Report</span></nav>
+      </div></div>
+    </div>
+    <div>
+      <p class="label">HR desktop: today's register</p>
+      <div class="panel">
+        <div class="ptitle"><b>Register, Thursday 12 Nov</b><span>6 people</span></div>
+        <div class="scrollx"><table id="a-reg"></table></div>
+      </div>
+      <p class="label" style="margin-top:20px">Status marks</p>
+      <div class="panel"><div class="statusrow" id="a-status"></div></div>
+    </div>
+  </div>
+  <div class="wide">
+    <p class="label">Monthly grid (November)</p>
+    <div class="panel"><div class="scrollx"><table class="grid" id="a-grid"></table></div></div>
+  </div>
+</section>
+
+<!-- ============================== B ============================== -->
+<section class="dir" data-dir="b" id="dir-b" role="tabpanel">
+  <div class="intro">
+    <div>
+      <h2 style="font:800 46px/1 'Schibsted Grotesk';letter-spacing:-.04em">Daylight</h2>
+      <p class="idea">A workday is a stretch of daylight. Every screen draws the day as a line from morning to evening: your shift, the hours you've worked, and a marigold sun showing <b>now</b>. In the register each person is a bar on the same line, so HR spots who came late at a glance, without reading a single time.</p>
+      <div class="facts">
+        <div><b>Signature:</b> the day line. It appears on the check-in screen, in the register and in the monthly grid (as filled hour bars).</div>
+        <div><b>Type:</b> Schibsted Grotesk: bold, warm, very readable numbers.</div>
+        <div><b>Feels:</b> bright, modern, optimistic. The most "app-like" of the three.</div>
+      </div>
+    </div>
+    <div>
+      <p class="label">Palette</p>
+      <div class="sw">
+        <span><i style="background:#f3f6f5"></i>Morning #F3F6F5</span>
+        <span><i style="background:#0e2a2b"></i>Deep teal ink #0E2A2B</span>
+        <span><i style="background:#f2b21e"></i>Marigold sun #F2B21E</span>
+        <span><i style="background:#1e7f6e"></i>Worked #1E7F6E</span>
+        <span><i style="background:#c2410c"></i>Late rust #C2410C</span>
+        <span><i style="background:#e3eeec"></i>Shift band #E3EEEC</span>
+      </div>
+    </div>
+  </div>
+  <div class="stage">
+    <div>
+      <p class="label">Employee phone · tap the button</p>
+      <div class="phone"><div class="screen">
+        <div class="sbar"><span class="clk-s">9:41</span><span>5G</span></div>
+        <div class="scroll">
+          <p class="b-greet">Good morning, Meena</p>
+          <p class="b-sub dt">Thursday, 12 Nov 2026</p>
+          <div class="sky">
+            <div class="b-time"><b class="clk-hm">09:41</b><span class="clk-ap">AM</span></div>
+            <div class="b-where" id="b-where">Your shift starts at 9:30 AM. You're on time until 9:45.</div>
+            <div class="track" id="b-track" aria-hidden="true"></div>
+            <button class="b-btn" id="b-btn"><svg class="i" style="width:24px;height:24px"><use href="#i-in"/></svg><span>Punch in</span></button>
+            <div class="b-facts"><div>Punched in<b id="b-in">–</b></div><div>Worked<b id="b-w">0h 00m</b></div><div>Out by<b>6:30 PM</b></div></div>
+          </div>
+        </div>
+        <nav class="tabbar"><span class="on"><svg class="i"><use href="#i-home"/></svg>Home</span><span><svg class="i"><use href="#i-cal"/></svg>Attendance</span><span><svg class="i"><use href="#i-leave"/></svg>Leave</span><span><svg class="i"><use href="#i-note"/></svg>Report</span></nav>
+      </div></div>
+    </div>
+    <div>
+      <p class="label">HR desktop: today's register</p>
+      <div class="panel">
+        <div class="ptitle"><b>Today</b><span>Thursday, 12 Nov</span></div>
+        <div class="scrollx"><div style="min-width:760px" id="b-reg"></div></div>
+      </div>
+      <p class="label" style="margin-top:20px">Status pills</p>
+      <div class="panel"><div class="statusrow" id="b-status" style="padding-top:18px"></div></div>
+    </div>
+  </div>
+  <div class="wide">
+    <p class="label">Monthly grid (November): bar height = hours worked</p>
+    <div class="panel" style="padding:10px 12px"><div class="scrollx"><table class="grid" id="b-grid"></table></div></div>
+  </div>
+</section>
+
+<!-- ============================== C ============================== -->
+<section class="dir" data-dir="c" id="dir-c" role="tabpanel">
+  <div class="intro">
+    <div>
+      <h2 style="font:700 42px/1.05 'Atkinson Hyperlegible Next'">Muster Book</h2>
+      <p class="idea">The paper attendance register every Indian office keeps, with ruled lines, a red margin and P / A marks, rebuilt for the phone. Employees <b>sign today's line</b> instead of "punching". The typeface was designed for low-vision readers, and the text is larger everywhere. This is the easiest of the three for staff who rarely use apps.</p>
+      <div class="facts">
+        <div><b>Signature:</b> the ruled register page with its red margin. Signing writes your time onto today's line.</div>
+        <div><b>Type:</b> Atkinson Hyperlegible Next (made for legibility) with its Mono for times. 16px minimum.</div>
+        <div><b>Feels:</b> official, calm, trustworthy. Closest to how HR already works on paper.</div>
+      </div>
+    </div>
+    <div>
+      <p class="label">Palette</p>
+      <div class="sw">
+        <span><i style="background:#f6f8fc"></i>Page #F6F8FC</span>
+        <span><i style="background:#d5dfee"></i>Ruled line #D5DFEE</span>
+        <span><i style="background:#d23c3c"></i>Margin red #D23C3C</span>
+        <span><i style="background:#13203b"></i>Ink #13203B</span>
+        <span><i style="background:#2242c2"></i>Pen blue #2242C2</span>
+        <span><i style="background:#1f7a4a"></i>Present green #1F7A4A</span>
+      </div>
+    </div>
+  </div>
+  <div class="stage">
+    <div>
+      <p class="label">Employee phone · tap the button</p>
+      <div class="phone"><div class="screen">
+        <div class="sbar"><span class="clk-s">9:41</span><span>5G</span></div>
+        <div class="scroll">
+          <p class="c-greet">Good morning, Meena</p>
+          <p class="c-sub dt">Thursday, 12 Nov 2026</p>
+          <div class="c-clock clk-12" style="margin-top:12px">09:41 AM</div>
+          <div class="sheet" aria-label="Today's register line">
+            <div class="sheet-row head"><span style="color:var(--ink);white-space:nowrap">Thu, 12 Nov</span><span style="font-size:14px;font-weight:400;white-space:nowrap">Shift 9:30 AM – 6:30 PM</span></div>
+            <div class="sheet-row"><span>Signed in</span><b class="write" id="c-in"></b></div>
+            <div class="sheet-row"><span>Signed out</span><b class="write" id="c-out"></b></div>
+            <div class="sheet-row"><span>Hours today</span><b class="mono" id="c-h" style="font-size:18px">–</b></div>
+          </div>
+          <button class="c-btn" id="c-btn"><svg class="i" style="width:24px;height:24px"><use href="#i-pen"/></svg><span>Sign in for today</span></button>
+          <p class="c-help" id="c-help">Tap once. Your time comes from the office clock, not your phone.</p>
+        </div>
+        <nav class="tabbar"><span class="on"><svg class="i"><use href="#i-home"/></svg>Today</span><span><svg class="i"><use href="#i-cal"/></svg>My month</span><span><svg class="i"><use href="#i-leave"/></svg>Leave</span><span><svg class="i"><use href="#i-note"/></svg>Report</span></nav>
+      </div></div>
+    </div>
+    <div>
+      <p class="label">HR desktop: today's register</p>
+      <div class="panel">
+        <div class="ptitle"><b>Register for Thursday, 12 Nov 2026</b><span>6 names</span></div>
+        <div class="scrollx"><table id="c-reg"></table></div>
+      </div>
+      <p class="label" style="margin-top:20px">Register marks</p>
+      <div class="panel"><div class="statusrow" id="c-status"></div></div>
+    </div>
+  </div>
+  <div class="wide">
+    <p class="label">Monthly muster (November)</p>
+    <div class="panel"><div class="scrollx"><table class="grid" id="c-grid"></table></div></div>
+  </div>
+</section>
+</main>
+
+<script>
+// ---------- shared demo data (fictional) ----------
+const STAFF = [
+  { name: "Anitha Raman", code: "EMP002", dept: "Operations", in: "09:12", out: "18:34", st: "P" },
+  { name: "Karthik Selvam", code: "EMP003", dept: "Creative", in: "09:58", out: "18:51", st: "L", late: 13 },
+  { name: "Divya Sundar", code: "EMP006", dept: "Operations", in: null, out: null, st: "LV" },
+  { name: "Praveen Kumar", code: "EMP005", dept: "Creative", in: "09:27", out: null, st: "M" },
+  { name: "Meena Krishnan", code: "EMP004", dept: "Accounts", in: null, out: null, st: "A" },
+  { name: "Lakshmi Narayanan", code: "EMP001", dept: "HR", in: "09:05", out: "13:40", st: "H" },
+];
+const STATUS = {
+  P: { word: "Present" }, L: { word: "Late" }, A: { word: "Absent" }, H: { word: "Half day" },
+  LV: { word: "On leave" }, HO: { word: "Holiday" }, WO: { word: "Weekly off" }, M: { word: "No punch-out" }, Q: { word: "Pending" },
+};
+const ORDER = ["P", "L", "A", "H", "LV", "HO", "WO", "Q"];
+const mins = (t) => { const [h, m] = t.split(":").map(Number); return h * 60 + m; };
+const ampm = (t) => { let [h, m] = t.split(":").map(Number); const ap = h >= 12 ? "PM" : "AM"; h = h % 12 || 12; return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")} ${ap}`; };
+const dur = (a, b) => { const d = mins(b) - mins(a); return `${Math.floor(d / 60)}h ${String(d % 60).padStart(2, "0")}m`; };
+// November 2026: 1st is a Sunday. Sundays + 2nd/4th Saturdays off, 8th Diwali. Today = 12th.
+const TODAY = 12, DAYS = 30;
+const wd = (d) => new Date(Date.UTC(2026, 10, d)).getUTCDay();
+const off = (d) => wd(d) === 0 || (wd(d) === 6 && [2, 4].includes(Math.ceil(d / 7)));
+const PAT = [["P","P","L","P","P","P","P","P","P"],["L","P","P","L","P","P","L","P","L"],["P","LV","LV","P","P","P","P","P","LV"],["P","P","H","P","P","M","P","P","M"],["P","A","P","P","P","A","P","P","A"],["P","P","P","P","L","P","P","P","H"]];
+const HOURS = { P: 9.2, L: 8.6, H: 4.5, M: 4, A: 0, LV: 0, HO: 0, WO: 0 };
+function cellStatus(r, d) {
+  if (d > TODAY) return "F";
+  if (d === 8) return "HO";
+  if (off(d)) return "WO";
+  const work = []; for (let x = 1; x <= DAYS; x++) if (!off(x) && x !== 8) work.push(x);
+  const idx = work.indexOf(d);
+  return PAT[r][idx % PAT[r].length];
+}
+const W = ["S","M","T","W","T","F","S"];
+
+// ---------- A: Time Card ----------
+function renderA() {
+  const reg = document.getElementById("a-reg");
+  reg.innerHTML = `<thead><tr><th>Name</th><th class="r">In</th><th class="r">Out</th><th class="r">Hours</th><th>Mark</th></tr></thead><tbody>` +
+    STAFF.map((s) => `<tr><td class="who"><b>${s.name}</b><span class="mono">${s.code}</span></td>
+      <td class="r">${s.in ? `<span class="stamp ${s.late ? "red" : ""}">${s.in}</span>${s.late ? `<span class="late">+${s.late}m</span>` : ""}` : `<span style="color:var(--ink2)">–</span>`}</td>
+      <td class="r">${s.out ? `<span class="stamp">${s.out}</span>` : s.st === "M" ? `<span class="stamp red">??:??</span>` : `<span style="color:var(--ink2)">–</span>`}</td>
+      <td class="r mono" style="font-size:13px">${s.in && s.out ? dur(s.in, s.out).replace("h ", ":").replace("m", "") : "–"}</td>
+      <td><span class="mark ${s.st}">${s.st === "M" ? "M" : s.st} · ${STATUS[s.st].word}</span></td></tr>`).join("") + "</tbody>";
+  document.getElementById("a-status").innerHTML = ORDER.map((k) => `<span class="mark ${k}">${k === "Q" ? "?" : k} · ${STATUS[k].word}</span>`).join("");
+  let h = `<thead><tr><th style="text-align:left;padding:0 12px;position:sticky;left:0;background:var(--card);border-right:1.5px solid var(--ink)">Name</th>`;
+  for (let d = 1; d <= DAYS; d++) h += `<th class="${d === TODAY ? "today" : ""}">${W[wd(d)]}<br>${String(d).padStart(2, "0")}</th>`;
+  h += "</tr></thead><tbody>";
+  STAFF.forEach((s, r) => {
+    h += `<tr><td class="name"><b>${s.name}</b></td>`;
+    for (let d = 1; d <= DAYS; d++) { const st = cellStatus(r, d); h += `<td title="${d} Nov: ${STATUS[st]?.word ?? "Upcoming"}"><div class="gc ${st}">${st === "F" ? "" : st}</div></td>`; }
+    h += "</tr>";
+  });
+  document.getElementById("a-grid").innerHTML = h + "</tbody>";
+}
+
+// ---------- B: Daylight ----------
+const AX0 = 8 * 60, AX1 = 20 * 60;
+const pos = (m) => `${((Math.min(Math.max(m, AX0), AX1) - AX0) / (AX1 - AX0)) * 100}%`;
+const width = (a, b) => `calc(${pos(b)} - ${pos(a)})`;
+const COLOR_B = { P: "--present", L: "--late", A: "--absent", H: "--late", LV: "--leave", HO: "--holiday", WO: "--off", M: "--absent", Q: "--pending" };
+function pillB(k) { return `<span class="pill ${k === "Q" ? "pending" : ""}" style="--c:var(${COLOR_B[k]})"><i></i>${STATUS[k].word}</span>`; }
+function renderB(nowMin) {
+  let h = `<div class="axis"><span></span><div class="ax">` + [8, 10, 12, 14, 16, 18, 20].map((x) => `<span style="left:${pos(x * 60)}">${x > 12 ? x - 12 + " PM" : x === 12 ? "12 PM" : x + " AM"}</span>`).join("") + `</div><span style="text-align:right">In / out</span></div>`;
+  h += STAFF.map((s) => {
+    let lane = `<div class="shift" style="left:${pos(570)};width:${width(570, 1110)}"></div>`;
+    if (s.in) {
+      const end = s.out ? mins(s.out) : nowMin;
+      if (s.late) lane += `<div class="seg late" style="left:${pos(mins(s.in))};width:${width(mins(s.in), Math.min(end, mins(s.in) + 60))}"></div><div class="seg" style="left:${pos(mins(s.in) + 60)};width:${width(mins(s.in) + 60, end)}"></div>`;
+      else lane += `<div class="seg ${s.out ? "" : "open"}" style="left:${pos(mins(s.in))};width:${width(mins(s.in), end)}"></div>`;
+    } else {
+      lane += `<div class="whole" style="color:var(${COLOR_B[s.st]});background:color-mix(in srgb,var(${COLOR_B[s.st]}) 10%,transparent)">${STATUS[s.st].word}</div>`;
+    }
+    lane += `<div class="now" style="left:${pos(nowMin)}"></div>`;
+    const times = s.in ? `${ampm(s.in)}${s.late ? ` <span class="lt">+${s.late}m</span>` : ""}<small>${s.out ? ampm(s.out) : s.st === "M" ? "No punch-out" : "Working"}</small>` : `<small>${STATUS[s.st].word}</small>`;
+    return `<div class="rowb"><div class="who"><b>${s.name}</b><span>${s.code} · ${s.dept}</span></div><div class="lane">${lane}</div><div class="times">${times}</div></div>`;
+  }).join("");
+  document.getElementById("b-reg").innerHTML = h;
+  document.getElementById("b-status").innerHTML = ORDER.map(pillB).join("");
+  let g = `<thead><tr><th></th>`;
+  for (let d = 1; d <= DAYS; d++) g += `<th class="${d === TODAY ? "today" : ""}">${W[wd(d)]}<br><span>${d}</span></th>`;
+  g += "</tr></thead><tbody>";
+  STAFF.forEach((s, r) => {
+    g += `<tr><td class="name">${s.name}</td>`;
+    for (let d = 1; d <= DAYS; d++) {
+      const st = cellStatus(r, d);
+      if (st === "F") { g += `<td><div class="hb" style="background:transparent;outline:1px dashed var(--line)"></div></td>`; continue; }
+      const hrs = HOURS[st] ?? 0;
+      g += hrs ? `<td title="${d} Nov: ${STATUS[st].word}, ${hrs}h"><div class="hb" style="--c:var(${COLOR_B[st]})"><i style="height:${Math.round((hrs / 9.5) * 100)}%"></i><b>${st === "P" ? "" : st}</b></div></td>`
+               : `<td title="${d} Nov: ${STATUS[st].word}"><div class="hb empty" style="--c:var(${COLOR_B[st]})"><b>${st}</b></div></td>`;
+    }
+    g += "</tr>";
+  });
+  document.getElementById("b-grid").innerHTML = g + "</tbody>";
+}
+function trackB(nowMin, inMin) {
+  const t = document.getElementById("b-track");
+  let h = `<div class="rail"></div><div class="shift" style="left:${pos(570)};width:${width(570, 1110)}"></div>`;
+  if (inMin != null) h += `<div class="worked" style="left:${pos(inMin)};width:${width(inMin, nowMin)}"></div>`;
+  h += `<div class="sun" style="left:${pos(nowMin)}"></div>`;
+  h += [8, 12, 16, 20].map((x) => `<span class="tick" style="left:${pos(x * 60)}">${x > 12 ? x - 12 + " PM" : x === 12 ? "12 PM" : x + " AM"}</span>`).join("");
+  t.innerHTML = h;
+}
+
+// ---------- C: Muster Book ----------
+const COLOR_C = { P: "--present", L: "--late", A: "--absent", H: "--late", LV: "--leave", HO: "--holiday", WO: "--off", M: "--absent", Q: "--pending" };
+const SHAPE_C = { A: "circle", L: "under", Q: "dash", M: "circle" };
+function markC(k) { return `<span class="rm" style="--c:var(${COLOR_C[k]})"><span class="m ${SHAPE_C[k] ?? ""}">${k === "Q" ? "?" : k}</span>${STATUS[k].word}</span>`; }
+function renderC() {
+  document.getElementById("c-reg").innerHTML = `<thead><tr><th class="sn">No.</th><th>Name</th><th class="r">In</th><th class="r">Out</th><th>Mark</th></tr></thead><tbody>` +
+    STAFF.map((s, i) => `<tr><td class="sn mono">${i + 1}</td><td class="who"><b>${s.name}</b><span>${s.dept}</span></td>
+      <td class="r mono">${s.in ? ampm(s.in) : "–"}${s.late ? `<span class="late">+${s.late}m</span>` : ""}</td>
+      <td class="r mono">${s.out ? ampm(s.out) : s.st === "M" ? `<span style="color:var(--absent);font-weight:700">Not signed</span>` : "–"}</td>
+      <td>${markC(s.st)}</td></tr>`).join("") + "</tbody>";
+  document.getElementById("c-status").innerHTML = ORDER.map(markC).join("");
+  let g = `<thead><tr><th class="name">Name</th>`;
+  for (let d = 1; d <= DAYS; d++) g += `<th class="${d === TODAY ? "today" : ""}">${W[wd(d)]}<br>${d}</th>`;
+  g += "</tr></thead><tbody>";
+  STAFF.forEach((s, r) => {
+    g += `<tr><td class="name">${s.name}</td>`;
+    for (let d = 1; d <= DAYS; d++) {
+      const st = cellStatus(r, d);
+      const cls = `${d === TODAY ? "today" : ""} ${st === "WO" ? "off" : ""}`;
+      g += st === "F" ? `<td class="${cls}"></td>` : `<td class="${cls}" title="${d} Nov: ${STATUS[st].word}"><span class="gm ${SHAPE_C[st] ?? ""}" style="--c:var(${COLOR_C[st]})">${st}</span></td>`;
+    }
+    g += "</tr>";
+  });
+  document.getElementById("c-grid").innerHTML = g + "</tbody>";
+}
+
+// ---------- live clock + punch demos ----------
+const ist = () => {
+  const p = new Intl.DateTimeFormat("en-GB", { hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: false, timeZone: "Asia/Kolkata" }).formatToParts(new Date());
+  const g = (t) => Number(p.find((x) => x.type === t).value);
+  return { h: g("hour"), m: g("minute"), s: g("second") };
+};
+const hm24 = (t) => `${String(t.h).padStart(2, "0")}:${String(t.m).padStart(2, "0")}`;
+const state = { a: 0, b: 0, c: 0, inMin: null, inStr: null };
+function tick() {
+  const t = ist(), nowMin = t.h * 60 + t.m, h12 = t.h % 12 || 12, ap = t.h >= 12 ? "PM" : "AM";
+  document.querySelectorAll(".clk-big").forEach((e) => (e.innerHTML = `${hm24(t)}<small>:${String(t.s).padStart(2, "0")}</small>`));
+  document.querySelectorAll(".clk-hm").forEach((e) => (e.textContent = `${String(h12).padStart(2, "0")}:${String(t.m).padStart(2, "0")}`));
+  document.querySelectorAll(".clk-ap").forEach((e) => (e.textContent = ap));
+  document.querySelectorAll(".clk-12").forEach((e) => (e.textContent = `${String(h12).padStart(2, "0")}:${String(t.m).padStart(2, "0")} ${ap}`));
+  document.querySelectorAll(".clk-s").forEach((e) => (e.textContent = `${h12}:${String(t.m).padStart(2, "0")}`));
+  trackB(nowMin, state.b >= 1 ? state.inMin : null);
+  if (state.b === 1) document.getElementById("b-w").textContent = dur(state.inStr, hm24(t));
+  renderB(nowMin);
+}
+function punch(dir) {
+  const t = ist(), now = hm24(t), lateBy = t.h * 60 + t.m - (9 * 60 + 45);
+  if (dir === "a") {
+    const btn = document.getElementById("a-btn");
+    if (state.a === 0) { document.getElementById("a-in").innerHTML = `<span class="stamp fresh ${lateBy > 0 ? "red" : ""}">${now}</span>`; btn.innerHTML = `<svg class="i" style="width:24px;height:24px"><use href="#i-out"/></svg><span>Punch out</span>`; document.getElementById("a-note").innerHTML = `Stamped in at <b>${ampm(now)}</b>. Recorded by the office clock.`; state.a = 1; state.inStr = now; }
+    else if (state.a === 1) { document.getElementById("a-out").innerHTML = `<span class="stamp fresh">${now}</span>`; document.getElementById("a-hrs").textContent = dur(state.inStr, now).replace("h ", ":").replace("m", ""); btn.className = "a-btn done"; btn.innerHTML = `<svg class="i" style="width:24px;height:24px"><use href="#i-check"/></svg><span>Card complete for today</span>`; document.getElementById("a-note").innerHTML = `Stamped out at <b>${ampm(now)}</b>. See you tomorrow.`; state.a = 2; }
+  }
+  if (dir === "b") {
+    const btn = document.getElementById("b-btn");
+    if (state.b === 0) { state.b = 1; state.inMin = t.h * 60 + t.m; state.inStr = now; document.getElementById("b-in").textContent = ampm(now); btn.className = "b-btn out"; btn.innerHTML = `<svg class="i" style="width:24px;height:24px"><use href="#i-out"/></svg><span>Punch out</span>`; document.getElementById("b-where").textContent = `You're in. Punched at ${ampm(now)}; the green line grows as you work.`; }
+    else if (state.b === 1) { state.b = 2; btn.className = "b-btn done"; btn.innerHTML = `<svg class="i" style="width:24px;height:24px"><use href="#i-check"/></svg><span>Done for today</span>`; document.getElementById("b-where").textContent = `Punched out at ${ampm(now)}. Enjoy your evening.`; }
+    tick();
+  }
+  if (dir === "c") {
+    const btn = document.getElementById("c-btn");
+    if (state.c === 0) { document.getElementById("c-in").innerHTML = `<span class="write fresh">${ampm(now)}</span>`; btn.className = "c-btn out"; btn.innerHTML = `<svg class="i" style="width:24px;height:24px"><use href="#i-pen"/></svg><span>Sign out for today</span>`; document.getElementById("c-help").textContent = "Signed in. Sign out when you leave."; state.c = 1; state.inStr = state.inStr ?? now; }
+    else if (state.c === 1) { document.getElementById("c-out").innerHTML = `<span class="write fresh">${ampm(now)}</span>`; document.getElementById("c-h").textContent = dur(state.inStr, now); btn.className = "c-btn done"; btn.innerHTML = `<svg class="i" style="width:24px;height:24px"><use href="#i-check"/></svg><span>Today's line is complete</span>`; document.getElementById("c-help").textContent = "Both times are written in the register."; state.c = 2; }
+  }
+  if (navigator.vibrate) navigator.vibrate(20);
+}
+["a", "b", "c"].forEach((d) => document.getElementById(`${d}-btn`).addEventListener("click", () => punch(d)));
+
+// tabs + theme
+document.querySelectorAll("[data-tab]").forEach((b) => b.addEventListener("click", () => {
+  document.querySelectorAll("[data-tab]").forEach((x) => x.setAttribute("aria-selected", x === b));
+  document.querySelectorAll(".dir").forEach((s) => s.classList.toggle("on", s.dataset.dir === b.dataset.tab));
+  try { localStorage.setItem("dd-tab", b.dataset.tab); } catch {}
+}));
+const tb = document.getElementById("theme");
+function setTheme(d) { document.documentElement.classList.toggle("dark", d); tb.textContent = d ? "Light" : "Dark"; tb.setAttribute("aria-pressed", d); try { localStorage.setItem("dd-theme", d ? "dark" : "light"); } catch {} }
+tb.onclick = () => setTheme(!document.documentElement.classList.contains("dark"));
+let st = null, tabSaved = null; try { st = localStorage.getItem("dd-theme"); tabSaved = new URLSearchParams(location.search).get("dir") || localStorage.getItem("dd-tab"); } catch {}
+setTheme(st ? st === "dark" : matchMedia("(prefers-color-scheme: dark)").matches);
+if (tabSaved) document.querySelector(`[data-tab="${tabSaved}"]`)?.click();
+if (new URLSearchParams(location.search).get("theme")) setTheme(new URLSearchParams(location.search).get("theme") === "dark");
+const dtStr = new Intl.DateTimeFormat("en-GB", { weekday: "long", day: "2-digit", month: "short", year: "numeric", timeZone: "Asia/Kolkata" }).format(new Date()).replace(/^(\w+) /, "$1, ");
+document.querySelectorAll(".dt").forEach((e) => (e.textContent = dtStr));
+renderA(); renderC(); tick(); setInterval(tick, 1000);
+</script>
+</body>
+</html>

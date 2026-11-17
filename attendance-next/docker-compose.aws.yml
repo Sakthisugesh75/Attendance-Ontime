@@ -1,0 +1,57 @@
+# AWS (Lightsail or EC2): MySQL + the app + Caddy, which gets and renews the https certificate
+# for DOMAIN by itself. Only ports 80 and 443 are open to the internet; MySQL and the app stay inside.
+#
+#   docker compose -f docker-compose.aws.yml up -d --build
+#
+# Settings come from .env next to this file (see deploy/aws/env.example).
+services:
+  db:
+    image: mysql:8.4
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: attendance_next
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:?Set MYSQL_ROOT_PASSWORD in .env}
+      TZ: UTC
+    volumes:
+      - mysql-data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -p\"$$MYSQL_ROOT_PASSWORD\" --silent"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+
+  app:
+    build: .
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    env_file: .env
+    environment:
+      DATABASE_URL: mysql://root:${MYSQL_ROOT_PASSWORD}@db:3306/attendance_next
+      AUTH_TRUST_HOST: "true"
+    # Uploads, photos, selfies and logos live in ./storage on the server (easy to back up).
+    volumes:
+      - ./storage:/app/storage
+    expose:
+      - "6001"
+
+  caddy:
+    image: caddy:2
+    restart: unless-stopped
+    depends_on:
+      - app
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      DOMAIN: ${DOMAIN:?Set DOMAIN in .env}
+    volumes:
+      - ./deploy/aws/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+      - caddy-config:/config
+
+volumes:
+  mysql-data:
+  caddy-data:
+  caddy-config:

@@ -1,0 +1,194 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>3D Illustration Concept</title>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300..700&display=swap" rel="stylesheet" />
+<style>
+:root {
+  --bg:#f5ecd6; --blob-1:#ffd66b; --blob-2:#ffbe98; --blob-3:#bfe6d4;
+  --glass:rgba(255,255,255,.6); --glass-2:rgba(255,255,255,.8); --edge:rgba(255,255,255,.9);
+  --shadow:0 24px 60px -24px rgba(120,88,30,.35),0 2px 6px rgba(120,88,30,.06);
+  --ink:#151410; --ink-2:#4f4b42; --ink-3:#6e6858; --line:rgba(21,20,16,.09); --on-ink:#fff;
+  --butter:#f7cf6b; --on-butter:#3b2a00;
+  --present:#14532d; --present-t:#e3f5e9; --late:#7a4a00; --late-t:#fef3d6;
+  --leave:#0f5757; --leave-t:#ddf4f3; --absent:#9b1c1c; --absent-t:#fde8e8;
+  --halo:rgba(255,255,255,.95); --frame:#fff;
+}
+:root[data-theme="dark"] {
+  --bg:#15130f; --blob-1:#6b5114; --blob-2:#5a2f1f; --blob-3:#17463a;
+  --glass:rgba(40,36,30,.58); --glass-2:rgba(52,47,39,.72); --edge:rgba(255,255,255,.08);
+  --shadow:0 24px 60px -24px rgba(0,0,0,.7),0 2px 6px rgba(0,0,0,.3);
+  --ink:#f6f1e6; --ink-2:#cdc5b3; --ink-3:#a0977f; --line:rgba(255,255,255,.08); --on-ink:#15130f;
+  --present:#86e5a9; --present-t:#12321f; --late:#f8cf62; --late-t:#352708;
+  --leave:#7adbd8; --leave-t:#0f3131; --absent:#fca5a5; --absent-t:#3a1517;
+  --halo:rgba(255,240,200,.12); --frame:#2b2720;
+}
+*{box-sizing:border-box;margin:0}
+body{font-family:Outfit,system-ui,sans-serif;color:var(--ink);min-height:100vh;padding:32px 16px 64px;
+  background:radial-gradient(40vw 40vw at 8% 10%,var(--blob-1),transparent 70%),radial-gradient(38vw 38vw at 92% 18%,var(--blob-2),transparent 70%),radial-gradient(44vw 44vw at 60% 95%,var(--blob-3),transparent 70%),var(--bg);background-attachment:fixed}
+.glass{background:var(--glass);backdrop-filter:blur(22px) saturate(1.4);-webkit-backdrop-filter:blur(22px) saturate(1.4);box-shadow:inset 0 1px 0 var(--edge),var(--shadow)}
+.wrap{max-width:1180px;margin:0 auto}
+header{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:28px}
+h1{font-weight:400;font-size:34px;letter-spacing:-.03em}
+.sub{color:var(--ink-2);margin-top:4px;max-width:640px}
+.pill{border:0;font:inherit;border-radius:999px;padding:10px 18px;cursor:pointer;background:var(--ink);color:var(--on-ink);font-weight:500}
+.grid{display:grid;grid-template-columns:390px 1fr;gap:28px;align-items:start}
+.label{font-size:13px;color:var(--ink-3);margin:0 0 10px 6px}
+
+/* 3D art: soft halo + contact shadow, gentle float */
+.art{position:relative;display:grid;place-items:center;flex-shrink:0}
+.art::before{content:"";position:absolute;inset:8%;border-radius:50%;background:radial-gradient(circle,var(--halo),transparent 70%)}
+.art img{position:relative;width:100%;height:100%;object-fit:contain;filter:drop-shadow(0 10px 12px rgba(80,50,0,.22))}
+.float img{animation:float 4s ease-in-out infinite}
+@keyframes float{50%{transform:translateY(-4px) rotate(-2deg)}}
+@media (prefers-reduced-motion:reduce){.float img{animation:none}}
+
+/* phone */
+.phone{border-radius:44px;padding:12px;background:var(--frame);box-shadow:0 40px 80px -30px rgba(60,40,0,.45)}
+.screen{border-radius:34px;overflow:hidden;padding:22px 16px 90px;position:relative;min-height:760px;
+  background:radial-gradient(260px 260px at 0 0,var(--blob-1),transparent 70%),radial-gradient(260px 260px at 100% 30%,var(--blob-2),transparent 70%),radial-gradient(300px 300px at 50% 100%,var(--blob-3),transparent 70%),var(--bg)}
+.hello{display:flex;align-items:center;gap:12px;padding:6px 4px 16px}
+.hello .art{width:72px;height:72px}
+.hello b{display:block;font-weight:500;font-size:22px;letter-spacing:-.02em}
+.hello span{color:var(--ink-2);font-size:14px}
+.punch{border-radius:28px;padding:18px;display:flex;align-items:center;gap:14px;margin-bottom:14px}
+.punch .art{width:64px;height:64px}
+.punch .t{font-size:44px;font-weight:300;letter-spacing:-.04em;line-height:1}
+.punch small{color:var(--ink-3);font-size:13px}
+.punch .pill{margin-left:auto;padding:14px 20px;white-space:nowrap}
+.qa{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.tile{border-radius:22px;padding:14px 12px 12px;display:flex;flex-direction:column;gap:12px}
+.tile .top{display:flex;justify-content:space-between;align-items:flex-start;gap:6px;min-height:58px}
+.tile h4{font-weight:500;font-size:16px;line-height:1.25;letter-spacing:-.01em}
+.tile .art{width:56px;height:56px;margin:-4px -2px 0 0}
+.tile .go{border-radius:999px;background:var(--glass-2);text-align:center;font-size:13px;padding:9px;box-shadow:inset 0 0 0 1px var(--line);font-weight:500}
+.tile .go.y{background:var(--butter);color:var(--on-butter);box-shadow:none}
+.dock{position:absolute;left:12px;right:12px;bottom:14px;height:62px;border-radius:999px;display:flex;justify-content:space-around;align-items:center}
+.dock i{width:46px;height:46px;border-radius:50%;background:var(--glass-2);display:grid;place-items:center}
+.dock i.on{background:var(--ink)}
+.dock img{width:26px;height:26px}
+
+/* desktop */
+.desk{border-radius:28px;padding:22px}
+.stats{display:grid;grid-template-columns:repeat(5,1fr);gap:12px}
+.stat{border-radius:22px;padding:16px;position:relative;overflow:hidden;min-height:132px}
+.stat .art{position:absolute;right:-2px;bottom:-4px;width:70px;height:70px}
+.stat p{font-size:13px;color:var(--ink-2)}
+.stat b{display:block;font-weight:300;font-size:42px;letter-spacing:-.04em;margin-top:8px;line-height:1}
+.stat b small{font-size:16px;color:var(--ink-3);letter-spacing:0}
+.stat em{font-style:normal;font-size:12px;color:var(--ink-3);display:block;padding-right:56px;margin-top:6px}
+.row2{display:grid;grid-template-columns:1.3fr 1fr;gap:12px;margin-top:12px}
+.card{border-radius:22px;padding:18px}
+.card h3{font-weight:500;font-size:18px;margin-bottom:12px}
+.req{display:flex;align-items:center;gap:12px;padding:10px 0;border-top:1px solid var(--line)}
+.req:first-of-type{border-top:0}
+.req .art{width:42px;height:42px}
+.req div{flex:1;min-width:0}
+.req b{font-weight:500;display:block}
+.req span{font-size:13px;color:var(--ink-3)}
+.req .pill{padding:8px 14px;font-size:13px;background:var(--butter);color:var(--on-butter)}
+.chip{font-size:12px;border-radius:999px;padding:4px 10px;font-weight:500}
+.empty{text-align:center;padding:10px 6px}
+.empty .art{width:110px;height:110px;margin:0 auto 8px}
+.empty b{font-weight:500;font-size:18px;display:block}
+.empty span{color:var(--ink-2);font-size:14px}
+.legend{border-radius:28px;padding:22px 24px 26px;margin-top:28px}
+.legend h3{font-weight:500;font-size:18px;letter-spacing:-.01em}
+.legend>p{color:var(--ink-3);font-size:13px;margin-top:2px}
+.groups{display:grid;grid-template-columns:1.25fr 1fr 1fr;gap:8px 28px;margin-top:20px}
+.groups h4{font-weight:500;font-size:13px;color:var(--ink-2);padding-bottom:10px;border-bottom:1px solid var(--line);margin-bottom:16px}
+.items{display:flex;flex-wrap:wrap;gap:18px 14px}
+.it{width:72px;text-align:center}
+.ped{position:relative;width:64px;height:64px;margin:0 auto 8px;border-radius:50%;background:radial-gradient(circle at 35% 30%,rgba(255,255,255,.75),transparent 60%),var(--t,var(--glass-2));box-shadow:inset 0 -6px 12px rgba(0,0,0,.06),inset 0 1px 0 var(--edge)}
+.ped::after{content:"";position:absolute;left:14%;right:14%;bottom:-7px;height:8px;border-radius:50%;background:rgba(60,40,0,.16);filter:blur(4px)}
+.ped img{position:absolute;left:50%;top:44%;width:58px;height:58px;transform:translate(-50%,-50%);filter:drop-shadow(0 6px 6px rgba(60,40,0,.25));transition:transform .18s cubic-bezier(.2,.7,.2,1)}
+.it:hover .ped img{transform:translate(-50%,-56%) rotate(-4deg)}
+.it span{font-size:12px;color:var(--ink-2)}
+:root[data-theme="dark"] .ped{background:radial-gradient(circle at 35% 30%,rgba(255,255,255,.1),transparent 60%),var(--t,var(--glass-2))}
+@media (max-width:980px){.groups{grid-template-columns:1fr}}
+@media (max-width:980px){.grid{grid-template-columns:1fr}.phone{max-width:390px;margin:0 auto}.stats{grid-template-columns:repeat(2,1fr)}.row2{grid-template-columns:1fr}}
+
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div>
+      <h1>v5: Glass + 3D illustrations</h1>
+      <p class="sub">The v4 glass stays the same. Big, friendly 3D art goes where people act or wait: quick actions, today's counts, request outcomes, empty screens. Line icons stay in buttons, the menu and tables.</p>
+    </div>
+    <button class="pill" onclick="const r=document.documentElement;r.dataset.theme=r.dataset.theme==='dark'?'light':'dark'">Light / dark</button>
+  </header>
+
+  <div class="grid">
+    <div>
+      <p class="label">Employee phone · Home</p>
+      <div class="phone"><div class="screen">
+        <div class="hello"><span class="art float"><img src="../../public/illustrations/wave.png" alt=""></span><div><b>Good morning, Kavin</b><span>Thursday, 12 Nov · shift 9:30 AM</span></div></div>
+        <div class="punch glass">
+          <span class="art"><img src="../../public/illustrations/alarm.png" alt=""></span>
+          <div><div class="t">9:12</div><small>Not checked in yet</small></div>
+          <button class="pill">Check in</button>
+        </div>
+        <p class="label" style="margin-top:6px">Quick actions</p>
+        <div class="qa">
+          <div class="tile glass"><div class="top"><h4>Apply<br>leave</h4><span class="art"><img src="../../public/illustrations/palm.png" alt=""></span></div><div class="go">Plan a break</div></div>
+          <div class="tile glass"><div class="top"><h4>Short<br>permission</h4><span class="art"><img src="../../public/illustrations/hourglass.png" alt=""></span></div><div class="go">Ask for hours</div></div>
+          <div class="tile glass"><div class="top"><h4>Work from<br>home</h4><span class="art"><img src="../../public/illustrations/house.png" alt=""></span></div><div class="go">Request WFH</div></div>
+          <div class="tile glass"><div class="top"><h4>Daily<br>report</h4><span class="art"><img src="../../public/illustrations/memo.png" alt=""></span></div><div class="go y">Write today's</div></div>
+          <div class="tile glass"><div class="top"><h4>My<br>calendar</h4><span class="art"><img src="../../public/illustrations/calendar.png" alt=""></span></div><div class="go">See the month</div></div>
+          <div class="tile glass"><div class="top"><h4>My<br>numbers</h4><span class="art"><img src="../../public/illustrations/chart.png" alt=""></span></div><div class="go">This month</div></div>
+        </div>
+        <div class="dock glass">
+          <i class="on"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--on-ink)" stroke-width="2"><path d="M3 10.5 12 3l9 7.5V21H3z"/></svg></i>
+          <i><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="5" width="18" height="16" rx="3"/><path d="M3 10h18M8 3v4M16 3v4"/></svg></i>
+          <i><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 3h8l4 4v14H4V3z"/></svg></i>
+          <i><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 21c1.5-4 4.5-6 8-6s6.5 2 8 6"/></svg></i>
+        </div>
+      </div></div>
+    </div>
+
+    <div>
+      <p class="label">HR desktop · Today</p>
+      <div class="desk glass">
+        <div class="stats">
+          <div class="stat glass"><span class="art"><img src="../../public/illustrations/check.png" alt=""></span><p>Present</p><b>18<small>/24</small></b><em>Arun, Divya, Farhan…</em></div>
+          <div class="stat glass"><span class="art"><img src="../../public/illustrations/snail.png" alt=""></span><p>Came in late</p><b>3</b><em>Kavin, Nila, Rohan</em></div>
+          <div class="stat glass"><span class="art"><img src="../../public/illustrations/palm.png" alt=""></span><p>On leave</p><b>2</b><em>Sana, Tharun</em></div>
+          <div class="stat glass"><span class="art"><img src="../../public/illustrations/house.png" alt=""></span><p>WFH / On duty</p><b>1</b><em>Uma</em></div>
+          <div class="stat glass"><span class="art"><img src="../../public/illustrations/zzz.png" alt=""></span><p>Not punched in</p><b>3</b><em>Vel, Yash, Zara</em></div>
+        </div>
+        <div class="row2">
+          <div class="card glass">
+            <h3>Waiting for you</h3>
+            <div class="req"><span class="art"><img src="../../public/illustrations/palm.png" alt=""></span><div><b>Sana Iqbal · Casual leave</b><span>14 – 16 Jan · 3 days</span></div><button class="pill">Approve</button></div>
+            <div class="req"><span class="art"><img src="../../public/illustrations/hourglass.png" alt=""></span><div><b>Rohan Das · Permission</b><span>Today · 4:30 – 6:30 PM</span></div><button class="pill">Approve</button></div>
+            <div class="req"><span class="art"><img src="../../public/illustrations/house.png" alt=""></span><div><b>Uma Pillai · Work from home</b><span>Fri, 13 Nov</span></div><button class="pill">Approve</button></div>
+          </div>
+          <div class="card glass">
+            <div class="empty"><span class="art float"><img src="../../public/illustrations/mailbox.png" alt=""></span><b>All caught up</b><span>No requests waiting. New ones show up here.</span></div>
+          </div>
+        </div>
+        <div class="row2">
+          <div class="card glass" style="display:flex;align-items:center;gap:14px"><span class="art" style="width:64px;height:64px"><img src="../../public/illustrations/thumbs.png" alt=""></span><div><b style="font-weight:500">Leave approved</b><br><span style="color:var(--ink-2);font-size:14px">Your 14 – 16 Jan leave was approved by Lakshmi N.</span></div></div>
+          <div class="card glass" style="display:flex;align-items:center;gap:14px"><span class="art" style="width:64px;height:64px"><img src="../../public/illustrations/party.png" alt=""></span><div><b style="font-weight:500">Holiday: Pongal</b><br><span style="color:var(--ink-2);font-size:14px">No shift today. Enjoy the day off.</span></div></div>
+        </div>
+      </div>
+
+      <section class="legend glass">
+        <h3>What each picture means</h3>
+        <p>Microsoft Fluent 3D (MIT licence), stored in the app. Each one always means the same thing.</p>
+        <div class="groups">
+          <div><h4>Today's status</h4><div class="items"><div class="it"><div class="ped" style="--t:var(--present-t)"><img src="../../public/illustrations/check.png" alt=""></div><span>Present</span></div><div class="it"><div class="ped" style="--t:var(--late-t)"><img src="../../public/illustrations/snail.png" alt=""></div><span>Late</span></div><div class="it"><div class="ped" style="--t:var(--leave-t)"><img src="../../public/illustrations/palm.png" alt=""></div><span>On leave</span></div><div class="it"><div class="ped" style="--t:var(--leave-t)"><img src="../../public/illustrations/hourglass.png" alt=""></div><span>Permission</span></div><div class="it"><div class="ped" style="--t:var(--present-t)"><img src="../../public/illustrations/house.png" alt=""></div><span>WFH</span></div><div class="it"><div class="ped" style="--t:var(--present-t)"><img src="../../public/illustrations/briefcase.png" alt=""></div><span>On duty</span></div><div class="it"><div class="ped" style="--t:var(--absent-t)"><img src="../../public/illustrations/zzz.png" alt=""></div><span>Not in</span></div></div></div>
+          <div><h4>Days & outcomes</h4><div class="items"><div class="it"><div class="ped"><img src="../../public/illustrations/party.png" alt=""></div><span>Holiday</span></div><div class="it"><div class="ped"><img src="../../public/illustrations/moon.png" alt=""></div><span>Weekly off</span></div><div class="it"><div class="ped"><img src="../../public/illustrations/thumbs.png" alt=""></div><span>Approved</span></div><div class="it"><div class="ped"><img src="../../public/illustrations/mailbox.png" alt=""></div><span>All clear</span></div><div class="it"><div class="ped"><img src="../../public/illustrations/bell.png" alt=""></div><span>Alerts</span></div></div></div>
+          <div><h4>Places in the app</h4><div class="items"><div class="it"><div class="ped"><img src="../../public/illustrations/memo.png" alt=""></div><span>Report</span></div><div class="it"><div class="ped"><img src="../../public/illustrations/calendar.png" alt=""></div><span>Calendar</span></div><div class="it"><div class="ped"><img src="../../public/illustrations/chart.png" alt=""></div><span>Reports</span></div><div class="it"><div class="ped"><img src="../../public/illustrations/office.png" alt=""></div><span>Company</span></div><div class="it"><div class="ped"><img src="../../public/illustrations/stopwatch.png" alt=""></div><span>Shifts</span></div><div class="it"><div class="ped"><img src="../../public/illustrations/wave.png" alt=""></div><span>Welcome</span></div></div></div>
+        </div>
+      </section>
+    </div>
+  </div>
+</div>
+<script>if(new URLSearchParams(location.search).get('theme')==='dark')document.documentElement.dataset.theme='dark'</script>
+</body>
+</html>

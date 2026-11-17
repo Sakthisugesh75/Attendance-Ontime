@@ -1,0 +1,34 @@
+services:
+  db:
+    image: mysql:8.4
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: attendance_next
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-change-me}
+      TZ: UTC
+    volumes:
+      - mysql-data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-p${MYSQL_ROOT_PASSWORD:-change-me}"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  app:
+    build: .
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    env_file: .env
+    environment:
+      DATABASE_URL: mysql://root:${MYSQL_ROOT_PASSWORD:-change-me}@db:3306/attendance_next
+      AUTH_TRUST_HOST: "true"
+    ports:
+      - "6001:6001"
+    volumes:
+      - storage:/app/storage
+
+volumes:
+  mysql-data:
+  storage:

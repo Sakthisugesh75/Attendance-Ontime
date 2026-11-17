@@ -1,0 +1,772 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Attendance Desk Design Preview</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+/* Tokens: identical to app/styles/design-tokens.css */
+:root{
+  --ad-brand:#4338e0;--ad-brand-hover:#372cc0;--ad-brand-fg:#fff;--ad-brand-text:#3a2fd0;--ad-brand-subtle:#eeedfd;
+  --ad-canvas:#f7f7f5;--ad-surface:#fff;--ad-surface-sunken:#f1f1ee;--ad-surface-raised:#fff;--ad-border:#e4e4e0;--ad-border-strong:#8a8b93;
+  --ad-text:#17171a;--ad-text-secondary:#45464d;--ad-text-muted:#63646b;--ad-text-disabled:#a1a1a8;
+  --ad-danger:#c81e1e;--ad-danger-subtle:#fde8e8;--ad-success:#1a8c4b;--ad-warning:#b07d00;--ad-info:#2f8fdb;
+  --ad-present-tint:#e3f5e9;--ad-present-fg:#14532d;--ad-present:#1a8c4b;
+  --ad-absent-tint:#fde8e8;--ad-absent-fg:#9b1c1c;--ad-absent:#dc2626;
+  --ad-late-tint:#fef3d6;--ad-late-fg:#7a4a00;--ad-late:#b07d00;
+  --ad-halfday-tint:#ffebdd;--ad-halfday-fg:#8a3a00;--ad-halfday:#ea6a0a;
+  --ad-leave-tint:#ddf4f3;--ad-leave-fg:#0f5757;--ad-leave:#0e9494;
+  --ad-holiday-tint:#e1f0fd;--ad-holiday-fg:#0b4a7a;--ad-holiday:#2f8fdb;
+  --ad-weeklyoff-tint:#efefec;--ad-weeklyoff-fg:#4b4c53;--ad-weeklyoff:#8e8f96;
+  --ad-pending-tint:#f6e9f7;--ad-pending-fg:#6b2170;--ad-pending:#b0459f;
+  --ad-shadow-sm:0 1px 2px rgba(23,23,26,.06);
+  --ad-shadow-md:0 1px 2px rgba(23,23,26,.05),0 4px 12px rgba(23,23,26,.08);
+  --ad-shadow-lg:0 2px 6px rgba(23,23,26,.06),0 16px 40px rgba(23,23,26,.14);
+  --ad-focus:0 0 0 2px var(--ad-surface),0 0 0 4px var(--ad-brand);
+  --ad-ease:cubic-bezier(.2,.7,.2,1);
+}
+.dark{
+  --ad-brand:#8b8bff;--ad-brand-hover:#a3a3ff;--ad-brand-fg:#0e0e11;--ad-brand-text:#a9a9ff;--ad-brand-subtle:#23224a;
+  --ad-canvas:#0e0e11;--ad-surface:#16171b;--ad-surface-sunken:#1d1e23;--ad-surface-raised:#26272d;--ad-border:#2c2d33;--ad-border-strong:#6e6f78;
+  --ad-text:#f2f2f4;--ad-text-secondary:#c6c7ce;--ad-text-muted:#9a9ba3;--ad-text-disabled:#5f6068;
+  --ad-danger:#f87171;--ad-danger-subtle:#3a1517;--ad-success:#34c774;--ad-warning:#f2b21b;--ad-info:#4aa8ee;
+  --ad-present-tint:#12321f;--ad-present-fg:#86e5a9;--ad-present:#34c774;
+  --ad-absent-tint:#3a1517;--ad-absent-fg:#fca5a5;--ad-absent:#f05252;
+  --ad-late-tint:#352708;--ad-late-fg:#f8cf62;--ad-late:#f2b21b;
+  --ad-halfday-tint:#3a1f0c;--ad-halfday-fg:#fdba8c;--ad-halfday:#f7873a;
+  --ad-leave-tint:#0f3131;--ad-leave-fg:#7adbd8;--ad-leave:#2dbdba;
+  --ad-holiday-tint:#0e2a42;--ad-holiday-fg:#8cc8f5;--ad-holiday:#4aa8ee;
+  --ad-weeklyoff-tint:#24252a;--ad-weeklyoff-fg:#b4b5bc;--ad-weeklyoff:#7c7d86;
+  --ad-pending-tint:#33173a;--ad-pending-fg:#e9aeea;--ad-pending:#d06bcb;
+  --ad-shadow-sm:0 1px 2px rgba(0,0,0,.4);
+  --ad-shadow-md:0 1px 2px rgba(0,0,0,.4),0 4px 12px rgba(0,0,0,.45);
+  --ad-shadow-lg:0 2px 6px rgba(0,0,0,.5),0 16px 40px rgba(0,0,0,.6);
+}
+@media (prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;transition-duration:.01ms!important}}
+
+*{box-sizing:border-box}
+html{font-family:Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;-webkit-font-smoothing:antialiased}
+body{margin:0;background:var(--ad-canvas);color:var(--ad-text);font-size:14px;line-height:20px;transition:background .18s var(--ad-ease),color .18s var(--ad-ease)}
+.tnum{font-variant-numeric:tabular-nums}
+svg.i{width:16px;height:16px;flex:none;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+:focus-visible{outline:none;box-shadow:var(--ad-focus);border-radius:8px}
+
+/* Page chrome */
+.top{position:sticky;top:0;z-index:20;display:flex;align-items:center;gap:12px;padding:12px 32px;background:color-mix(in srgb,var(--ad-canvas) 88%,transparent);backdrop-filter:blur(8px);border-bottom:1px solid var(--ad-border)}
+.logo{display:grid;place-items:center;width:28px;height:28px;border-radius:8px;background:var(--ad-brand);color:var(--ad-brand-fg)}
+.top b{font-size:15px}
+.top .sub{color:var(--ad-text-muted);font-size:12px}
+.top nav{margin-left:auto;display:flex;gap:4px;flex-wrap:wrap}
+.top nav a{color:var(--ad-text-secondary);text-decoration:none;font-size:13px;font-weight:500;padding:6px 10px;border-radius:8px}
+.top nav a:hover{background:var(--ad-surface-sunken);color:var(--ad-text)}
+main{max-width:1240px;margin:0 auto;padding:32px}
+section{margin-bottom:48px;scroll-margin-top:72px}
+.eyebrow{font-size:12px;font-weight:600;color:var(--ad-text-muted);margin:0 0 4px}
+h2{font-size:24px;line-height:32px;font-weight:600;letter-spacing:-.01em;margin:0 0 4px}
+.lede{color:var(--ad-text-secondary);margin:0 0 20px;max-width:720px}
+h3{font-size:16px;line-height:24px;font-weight:600;margin:0}
+.card{background:var(--ad-surface);border:1px solid var(--ad-border);border-radius:12px}
+.pad{padding:20px}
+.grid{display:grid;gap:12px}
+.muted{color:var(--ad-text-muted)}
+.sec{color:var(--ad-text-secondary)}
+.cap{font-size:12px;line-height:16px;font-weight:500}
+
+/* Buttons */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;height:40px;padding:0 16px;border-radius:8px;border:1px solid transparent;font:500 14px/20px Inter,sans-serif;cursor:pointer;transition:background .12s var(--ad-ease),border-color .12s var(--ad-ease),transform .12s;white-space:nowrap}
+.btn:active{transform:translateY(1px)}
+.btn-primary{background:var(--ad-brand);color:var(--ad-brand-fg)}
+.btn-primary:hover,.btn-primary.is-hover{background:var(--ad-brand-hover)}
+.btn-secondary{background:var(--ad-surface);color:var(--ad-text);border-color:var(--ad-border-strong)}
+.btn-secondary:hover,.btn-secondary.is-hover{background:var(--ad-surface-sunken)}
+.btn-ghost{background:transparent;color:var(--ad-text-secondary)}
+.btn-ghost:hover,.btn-ghost.is-hover{background:var(--ad-surface-sunken);color:var(--ad-text)}
+.btn-danger{background:var(--ad-danger);color:#fff}
+.dark .btn-danger{color:#0e0e11}
+.btn-link{background:none;color:var(--ad-brand-text);padding:0;height:auto}
+.btn-link:hover{text-decoration:underline}
+.btn.is-focus{box-shadow:var(--ad-focus)}
+.btn[disabled]{background:var(--ad-surface-sunken);color:var(--ad-text-disabled);border-color:transparent;cursor:not-allowed;transform:none}
+.btn-sm{height:32px;padding:0 12px;font-size:13px}
+.btn-lg{height:48px;padding:0 20px;font-size:16px;font-weight:600}
+.spin{width:16px;height:16px;border-radius:50%;border:2px solid currentColor;border-right-color:transparent;animation:spin .7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* Status pill */
+.pill{display:inline-flex;align-items:center;gap:5px;height:22px;padding:0 8px 0 6px;border-radius:999px;font-size:12px;font-weight:600;line-height:16px;white-space:nowrap}
+.pill svg.i{width:14px;height:14px}
+.code{display:inline-grid;place-items:center;min-width:20px;height:20px;padding:0 3px;border-radius:4px;font-size:11px;font-weight:700;letter-spacing:.02em}
+.st-present{background:var(--ad-present-tint);color:var(--ad-present-fg)}
+.st-absent{background:var(--ad-absent-tint);color:var(--ad-absent-fg)}
+.st-late{background:var(--ad-late-tint);color:var(--ad-late-fg)}
+.st-halfday{background:var(--ad-halfday-tint);color:var(--ad-halfday-fg)}
+.st-leave{background:var(--ad-leave-tint);color:var(--ad-leave-fg)}
+.st-holiday{background:var(--ad-holiday-tint);color:var(--ad-holiday-fg)}
+.st-weeklyoff{background:var(--ad-weeklyoff-tint);color:var(--ad-weeklyoff-fg)}
+.st-pending{background:var(--ad-pending-tint);color:var(--ad-pending-fg);box-shadow:inset 0 0 0 1px var(--ad-pending);outline:1px dashed var(--ad-pending);outline-offset:-1px;box-shadow:none}
+.st-neutral{background:var(--ad-surface-sunken);color:var(--ad-text-secondary)}
+
+/* Swatches */
+.sw-grid{grid-template-columns:repeat(auto-fill,minmax(150px,1fr))}
+.sw{border-radius:12px;border:1px solid var(--ad-border);overflow:hidden;background:var(--ad-surface)}
+.sw .chip{height:56px}
+.sw .meta{padding:8px 10px}
+.sw .meta b{display:block;font-size:12px}
+.sw .meta span{font-size:11px;color:var(--ad-text-muted)}
+.scale{display:flex;border-radius:12px;overflow:hidden;border:1px solid var(--ad-border)}
+.scale div{flex:1;height:44px;display:flex;align-items:flex-end;padding:4px 6px;font-size:10px;font-weight:600}
+.status-table{width:100%;border-collapse:collapse}
+.status-table td,.status-table th{padding:10px 12px;border-bottom:1px solid var(--ad-border);text-align:left;vertical-align:middle}
+.status-table th{font-size:12px;font-weight:600;color:var(--ad-text-muted);background:var(--ad-surface-sunken)}
+.dot{display:inline-block;width:10px;height:10px;border-radius:50%}
+
+/* Type scale */
+.type-row{display:grid;grid-template-columns:140px 1fr 150px;gap:16px;align-items:baseline;padding:12px 0;border-bottom:1px solid var(--ad-border)}
+.type-row:last-child{border-bottom:0}
+
+/* Layout helpers */
+.split{display:grid;grid-template-columns:400px 1fr;gap:24px;align-items:start}
+.row{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.state-grid{display:grid;grid-template-columns:110px repeat(5,1fr);gap:10px;align-items:center}
+.state-grid .h{font-size:12px;font-weight:600;color:var(--ad-text-muted)}
+
+/* Phone mockup */
+.phone{width:380px;max-width:100%;border-radius:36px;padding:12px;background:var(--ad-text);box-shadow:var(--ad-shadow-lg)}
+.dark .phone{background:#2c2d33}
+.screen{border-radius:26px;overflow:hidden;background:var(--ad-canvas);height:760px;display:flex;flex-direction:column}
+.sbar{display:flex;justify-content:space-between;padding:12px 22px 4px;font-size:12px;font-weight:600}
+.scroll{flex:1;overflow:auto;padding:8px 16px 16px}
+.greet{font-size:22px;line-height:28px;font-weight:600;margin:6px 0 2px}
+.hero{background:var(--ad-surface);border:1px solid var(--ad-border);border-radius:16px;padding:20px;margin-top:14px}
+.clock{font-size:44px;line-height:48px;font-weight:600;letter-spacing:-.02em}
+.clock small{font-size:16px;font-weight:600;color:var(--ad-text-muted);letter-spacing:0;margin-left:2px}
+.clock em{font-style:normal;font-size:16px;font-weight:600;color:var(--ad-text-secondary);margin-left:6px;letter-spacing:0}
+.hero-btn{position:relative;overflow:hidden;width:100%;height:64px;border:0;border-radius:12px;margin-top:18px;display:flex;align-items:center;justify-content:center;gap:10px;font:600 18px/24px Inter,sans-serif;cursor:pointer;user-select:none;-webkit-user-select:none;touch-action:manipulation;transition:background .18s var(--ad-ease),transform .12s}
+.hero-btn svg.i{width:24px;height:24px}
+.hero-btn.in{background:var(--ad-brand);color:var(--ad-brand-fg)}
+.hero-btn.out{background:var(--ad-text);color:var(--ad-surface)}
+.hero-btn.done{background:var(--ad-present-tint);color:var(--ad-present-fg)}
+.hero-btn .fill{position:absolute;inset:0;width:0;background:rgba(255,255,255,.22);pointer-events:none}
+.hero-btn span{position:relative}
+.hint{font-size:13px;line-height:18px;color:var(--ad-text-muted);text-align:center;margin-top:8px;min-height:18px}
+.minis{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:16px}
+.mini{background:var(--ad-surface-sunken);border-radius:10px;padding:10px}
+.mini .l{font-size:12px;color:var(--ad-text-muted);font-weight:500}
+.mini .v{font-size:16px;font-weight:600;margin-top:2px;white-space:nowrap}
+.bar{height:6px;border-radius:999px;background:var(--ad-surface-sunken);margin-top:14px;overflow:hidden}
+.bar div{height:100%;background:var(--ad-brand);border-radius:999px}
+.confirm{display:flex;gap:6px;align-items:center;font-size:13px;color:var(--ad-present-fg);margin-top:10px}
+.week{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;margin-top:10px}
+.week div{display:flex;flex-direction:column;align-items:center;gap:4px;font-size:11px;color:var(--ad-text-muted);font-weight:600}
+.tabbar{display:grid;grid-template-columns:repeat(4,1fr);border-top:1px solid var(--ad-border);background:var(--ad-surface);padding-bottom:14px}
+.tab{position:relative;display:flex;flex-direction:column;align-items:center;gap:3px;padding:9px 0 4px;font-size:12px;font-weight:600;color:var(--ad-text-muted)}
+.tab svg.i{width:24px;height:24px}
+.tab.on{color:var(--ad-brand-text)}
+.tab.on::before{content:"";position:absolute;top:0;width:24px;height:3px;border-radius:0 0 3px 3px;background:var(--ad-brand)}
+
+/* Register */
+.toolbar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:10px 12px;border-bottom:1px solid var(--ad-border)}
+.stepper{display:flex;align-items:center;gap:2px;border:1px solid var(--ad-border-strong);border-radius:8px;height:36px;padding:0 2px}
+.stepper button{border:0;background:none;color:var(--ad-text-secondary);width:30px;height:30px;border-radius:6px;display:grid;place-items:center;cursor:pointer}
+.stepper button:hover{background:var(--ad-surface-sunken)}
+.stepper b{font-size:13px;padding:0 6px;font-weight:600}
+.search{display:flex;align-items:center;gap:8px;height:36px;border:1px solid var(--ad-border-strong);border-radius:8px;padding:0 10px;color:var(--ad-text-muted);min-width:220px;background:var(--ad-surface)}
+.search input{border:0;outline:0;background:none;font:400 14px Inter,sans-serif;color:var(--ad-text);width:100%}
+.fchip{display:inline-flex;align-items:center;gap:6px;height:30px;padding:0 4px 0 4px;border-radius:999px;border:1px solid var(--ad-border);background:var(--ad-surface);cursor:pointer;font:500 12px Inter,sans-serif;color:var(--ad-text-secondary)}
+.fchip .n{font-variant-numeric:tabular-nums;padding-right:6px;font-weight:600}
+.fchip.on{border-color:var(--ad-brand);box-shadow:inset 0 0 0 1px var(--ad-brand)}
+.bulk{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:8px 12px;background:var(--ad-brand-subtle);color:var(--ad-brand-text);font-weight:600;font-size:13px;border-bottom:1px solid var(--ad-border)}
+.tbl-wrap{overflow:auto;max-height:420px}
+table.reg{width:100%;border-collapse:separate;border-spacing:0;min-width:860px}
+.reg th{position:sticky;top:0;z-index:2;background:var(--ad-surface-sunken);font-size:12px;font-weight:600;color:var(--ad-text-muted);text-align:left;padding:10px 16px;border-bottom:1px solid var(--ad-border);white-space:nowrap}
+.reg td{padding:12px 16px;border-bottom:1px solid var(--ad-border);white-space:nowrap;color:var(--ad-text-secondary)}
+.reg .r{text-align:right}
+.reg tr:hover td{background:var(--ad-surface-sunken)}
+.reg tr.sel td{background:var(--ad-brand-subtle)}
+.reg tr.sel td:first-child{box-shadow:inset 2px 0 0 var(--ad-brand)}
+.emp{display:flex;align-items:center;gap:10px}
+.av{width:28px;height:28px;border-radius:50%;display:grid;place-items:center;font-size:11px;font-weight:700;background:var(--ad-surface-sunken);color:var(--ad-text-secondary);flex:none}
+.emp b{display:block;color:var(--ad-text);font-weight:500}
+.emp span{font-size:12px;color:var(--ad-text-muted);font-variant-numeric:tabular-nums slashed-zero}
+.late-by{color:var(--ad-late-fg);font-weight:600;font-size:12px;margin-left:4px}
+.cb{width:18px;height:18px;border-radius:4px;border:1px solid var(--ad-border-strong);display:inline-grid;place-items:center;vertical-align:middle;background:var(--ad-surface)}
+.cb.on{background:var(--ad-brand);border-color:var(--ad-brand);color:var(--ad-brand-fg)}
+.cb.on svg.i{width:12px;height:12px;stroke-width:3}
+.skel{height:12px;border-radius:4px;background:linear-gradient(90deg,var(--ad-surface-sunken),var(--ad-border),var(--ad-surface-sunken));background-size:200% 100%;animation:sh 1.4s ease-in-out infinite}
+@keyframes sh{to{background-position:-200% 0}}
+
+/* Month grid */
+.mg-wrap{overflow:auto;max-height:440px}
+table.mg{border-collapse:separate;border-spacing:2px;min-width:100%}
+.mg th,.mg td{padding:0}
+.mg thead th{position:sticky;top:0;z-index:2;background:var(--ad-surface);font-size:11px;font-weight:600;color:var(--ad-text-muted);text-align:center;padding:4px 0}
+.mg thead th .d{display:block;font-size:12px;color:var(--ad-text);font-variant-numeric:tabular-nums}
+.mg thead th.off .d{color:var(--ad-text-muted)}
+.mg thead th.today .d{display:grid;place-items:center;width:22px;height:22px;margin:2px auto 0;border-radius:50%;box-shadow:0 0 0 2px var(--ad-brand);color:var(--ad-brand-text)}
+.mg .name{position:sticky;left:0;z-index:1;background:var(--ad-surface);min-width:200px;padding:0 10px 0 0;text-align:left}
+.mg thead .name{z-index:3}
+.cell{width:34px;height:34px;border-radius:4px;display:grid;place-items:center;font-size:11px;font-weight:700;position:relative;cursor:default}
+.cell.today-col{box-shadow:0 0 0 2px var(--ad-brand-subtle)}
+.cell.future{background:transparent;border:1px dashed var(--ad-border)}
+.cell.wo{background-image:repeating-linear-gradient(45deg,transparent 0 4px,color-mix(in srgb,var(--ad-weeklyoff-fg) 14%,transparent) 4px 5px)}
+.cell .edit{position:absolute;top:3px;right:3px;width:5px;height:5px;border-radius:50%;background:var(--ad-text-muted)}
+.cell .miss{position:absolute;left:4px;right:4px;bottom:2px;height:2px;border-radius:2px;background:var(--ad-danger)}
+.mg .sum{position:sticky;right:0;background:var(--ad-surface);padding-left:10px;font-size:12px;white-space:nowrap;color:var(--ad-text-secondary)}
+.legend{display:flex;flex-wrap:wrap;gap:6px 14px;padding:10px 12px;border-bottom:1px solid var(--ad-border);font-size:12px;color:var(--ad-text-secondary)}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+
+/* Stat cards */
+.stats{grid-template-columns:repeat(4,1fr)}
+.stat{padding:16px;cursor:pointer;transition:border-color .12s}
+.stat:hover{border-color:var(--ad-border-strong)}
+.stat .top-row{display:flex;justify-content:space-between;align-items:center;color:var(--ad-text-secondary);font-weight:500;font-size:13px}
+.stat .ico{width:32px;height:32px;border-radius:8px;display:grid;place-items:center}
+.stat .ico svg.i{width:18px;height:18px}
+.stat .val{font-size:32px;line-height:40px;font-weight:600;letter-spacing:-.02em;margin-top:8px}
+.trend{display:inline-flex;align-items:center;gap:3px;font-weight:600}
+
+/* Leave card */
+.leave{padding:16px}
+.leave .dates{font-size:16px;font-weight:600;margin:12px 0 2px}
+.quote{border-left:2px solid var(--ad-border);padding-left:10px;color:var(--ad-text-secondary);margin:12px 0}
+.note{display:flex;gap:8px;align-items:flex-start;background:var(--ad-late-tint);color:var(--ad-late-fg);border-radius:8px;padding:8px 10px;font-size:12px;font-weight:500}
+.decided{display:flex;align-items:center;gap:8px;padding:12px 16px;font-size:13px;color:var(--ad-text-secondary)}
+
+/* Form */
+.field{display:flex;flex-direction:column;gap:6px}
+.field label{font-size:13px;font-weight:500}
+.field label .req{color:var(--ad-danger)}
+.input,.select{height:40px;border-radius:8px;border:1px solid var(--ad-border-strong);background:var(--ad-surface);color:var(--ad-text);padding:0 12px;font:400 14px Inter,sans-serif;width:100%;transition:border-color .12s}
+.input::placeholder{color:var(--ad-text-muted)}
+.input:hover{border-color:var(--ad-text-muted)}
+.input:focus{outline:none;border-color:var(--ad-brand);box-shadow:var(--ad-focus)}
+.input.err{border-color:var(--ad-danger)}
+.input[disabled]{background:var(--ad-surface-sunken);color:var(--ad-text-disabled);border-color:var(--ad-border)}
+.help{font-size:12px;color:var(--ad-text-muted);font-weight:500}
+.help.err{color:var(--ad-danger);display:flex;gap:4px;align-items:center}
+.seg{display:grid;grid-template-columns:1fr 1fr;gap:4px;padding:4px;background:var(--ad-surface-sunken);border-radius:10px}
+.seg button{height:32px;border:0;border-radius:7px;background:none;font:500 13px Inter,sans-serif;color:var(--ad-text-muted);cursor:pointer}
+.seg button.on{background:var(--ad-surface);color:var(--ad-text);box-shadow:var(--ad-shadow-sm)}
+.chips{display:flex;gap:6px;flex-wrap:wrap}
+.chip{height:28px;padding:0 10px;border-radius:999px;border:1px solid var(--ad-border);background:var(--ad-surface);font:500 12px Inter,sans-serif;color:var(--ad-text-secondary);cursor:pointer}
+.chip:hover{background:var(--ad-surface-sunken)}
+.dp{display:grid;grid-template-columns:repeat(7,1fr);gap:2px;text-align:center;font-size:12px}
+.dp .h{color:var(--ad-text-muted);font-weight:600;padding:4px 0}
+.dp .d{height:34px;display:grid;place-items:center;border-radius:8px;font-variant-numeric:tabular-nums;position:relative}
+.dp .d.mute{color:var(--ad-text-disabled)}
+.dp .d.today{box-shadow:inset 0 0 0 2px var(--ad-brand)}
+.dp .d.range{background:var(--ad-brand-subtle);color:var(--ad-brand-text);border-radius:0}
+.dp .d.end{background:var(--ad-brand);color:var(--ad-brand-fg)}
+.dp .d .hd{position:absolute;bottom:3px;width:4px;height:4px;border-radius:50%;background:var(--ad-holiday)}
+.toast{display:flex;gap:10px;align-items:center;background:var(--ad-surface-raised);border:1px solid var(--ad-border);box-shadow:var(--ad-shadow-md);border-radius:12px;padding:12px 14px;font-size:14px;max-width:380px}
+.empty{text-align:center;padding:28px 16px}
+.empty .ring{width:64px;height:64px;border-radius:50%;background:var(--ad-surface-sunken);display:grid;place-items:center;margin:0 auto 12px;color:var(--ad-text-muted)}
+.empty .ring svg.i{width:28px;height:28px}
+.sidebar-demo{width:248px;padding:12px;border-right:1px solid var(--ad-border)}
+.nav-i{display:flex;align-items:center;gap:10px;height:36px;padding:0 12px;border-radius:8px;font-size:13px;font-weight:500;color:var(--ad-text-secondary)}
+.nav-i:hover{background:var(--ad-surface-sunken)}
+.nav-i.on{background:var(--ad-brand-subtle);color:var(--ad-brand-text)}
+.nav-i .badge{margin-left:auto;background:var(--ad-brand);color:var(--ad-brand-fg);font-size:11px;font-weight:700;border-radius:999px;padding:1px 7px}
+.nav-g{font-size:12px;font-weight:500;color:var(--ad-text-muted);margin:14px 12px 6px}
+
+.reg-cards{display:none}
+.rc{padding:12px 14px;border-bottom:1px solid var(--ad-border)}
+.rc .times{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:10px}
+.rc .times .l{font-size:12px;color:var(--ad-text-muted);font-weight:500}
+.rc .times .v{font-weight:600;color:var(--ad-text)}
+@media (max-width:767px){.tbl-wrap{display:none}.reg-cards{display:block}.two{grid-template-columns:1fr!important}}
+@media (max-width:980px){.split{grid-template-columns:1fr}.stats{grid-template-columns:repeat(2,1fr)}.state-grid{grid-template-columns:90px repeat(5,minmax(110px,1fr));overflow:auto}.type-row{grid-template-columns:1fr}.top nav{display:none}main{padding:24px 16px}.top{padding:12px 16px}}
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <symbol id="i-check" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></symbol>
+    <symbol id="i-x" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="m15 9-6 6M9 9l6 6"/></symbol>
+    <symbol id="i-late" viewBox="0 0 24 24"><path d="M12 6v6l3 2"/><path d="M20.8 14A9 9 0 1 1 21 10.5"/><path d="M20 18v2M20 22h.01"/></symbol>
+    <symbol id="i-half" viewBox="0 0 24 24"><path d="M12 2a10 10 0 0 1 0 20z" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r="10"/></symbol>
+    <symbol id="i-palm" viewBox="0 0 24 24"><path d="M13 8c0-2.8-2.2-5-5-5-2.8 0-5 2.2-5 5h4l-2 2"/><path d="M11 8c0-2.8 2.2-5 5-5 2.8 0 5 2.2 5 5h-4l2 2"/><path d="M12 8v14"/><path d="M8 22h8"/></symbol>
+    <symbol id="i-party" viewBox="0 0 24 24"><path d="M5.8 11.3 2 22l10.7-3.8"/><path d="M4 3h.01M22 8h.01M15 2h.01M22 20h.01"/><path d="m22 2-2.2.8a3 3 0 0 0-1.8 3.8"/><path d="M8.6 9.4 14.6 15.4a1.5 1.5 0 0 0 2.1-2.1L10.7 7.3a1.5 1.5 0 0 0-2.1 2.1z"/></symbol>
+    <symbol id="i-moon" viewBox="0 0 24 24"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9z"/></symbol>
+    <symbol id="i-hour" viewBox="0 0 24 24"><path d="M5 22h14M5 2h14M17 22v-4.2a2 2 0 0 0-.6-1.4L12 12l-4.4 4.4a2 2 0 0 0-.6 1.4V22M7 2v4.2a2 2 0 0 0 .6 1.4L12 12l4.4-4.4a2 2 0 0 0 .6-1.4V2"/></symbol>
+    <symbol id="i-in" viewBox="0 0 24 24"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><path d="m10 17 5-5-5-5"/><path d="M15 12H3"/></symbol>
+    <symbol id="i-out" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="m16 17 5-5-5-5"/><path d="M21 12H9"/></symbol>
+    <symbol id="i-pin" viewBox="0 0 24 24"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0z"/><circle cx="12" cy="10" r="3"/></symbol>
+    <symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></symbol>
+    <symbol id="i-left" viewBox="0 0 24 24"><path d="m15 18-6-6 6-6"/></symbol>
+    <symbol id="i-right" viewBox="0 0 24 24"><path d="m9 18 6-6-6-6"/></symbol>
+    <symbol id="i-cal" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></symbol>
+    <symbol id="i-down" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m7 10 5 5 5-5"/><path d="M12 15V3"/></symbol>
+    <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+    <symbol id="i-dots" viewBox="0 0 24 24"><circle cx="12" cy="5" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="12" cy="19" r="1"/></symbol>
+    <symbol id="i-tick" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></symbol>
+    <symbol id="i-alert" viewBox="0 0 24 24"><path d="m21.7 18-8-14a2 2 0 0 0-3.4 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.7-3z"/><path d="M12 9v4M12 17h.01"/></symbol>
+    <symbol id="i-users" viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.9M16 3.1a4 4 0 0 1 0 7.8"/></symbol>
+    <symbol id="i-home" viewBox="0 0 24 24"><path d="M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></symbol>
+    <symbol id="i-user" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></symbol>
+    <symbol id="i-grid" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></symbol>
+    <symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></symbol>
+    <symbol id="i-up" viewBox="0 0 24 24"><path d="m5 12 7-7 7 7M12 19V5"/></symbol>
+    <symbol id="i-dn" viewBox="0 0 24 24"><path d="m19 12-7 7-7-7M12 5v14"/></symbol>
+    <symbol id="i-clip" viewBox="0 0 24 24"><path d="m21.4 11-8.6 8.6a6 6 0 0 1-8.5-8.5l8.6-8.6a4 4 0 0 1 5.7 5.7l-8.6 8.6a2 2 0 0 1-2.8-2.8l8-8"/></symbol>
+    <symbol id="i-circle-alert" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/></symbol>
+    <symbol id="i-inbox" viewBox="0 0 24 24"><path d="M22 12h-6l-2 3h-4l-2-3H2"/><path d="M5.5 5.1 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.5-6.9A2 2 0 0 0 16.8 4H7.2a2 2 0 0 0-1.7 1.1z"/></symbol>
+  </defs>
+</svg>
+
+<header class="top">
+  <span class="logo"><svg class="i"><use href="#i-late"/></svg></span>
+  <div><b>Attendance Desk</b><div class="sub">Design system preview · v1</div></div>
+  <nav aria-label="Sections">
+    <a href="#colors">Colour</a><a href="#status">Status</a><a href="#type">Type</a><a href="#buttons">Buttons</a>
+    <a href="#mobile">Check-in</a><a href="#register">Register</a><a href="#calendar">Calendar</a><a href="#cards">Cards</a><a href="#forms">Forms</a>
+  </nav>
+  <button class="btn btn-secondary btn-sm" id="theme" aria-pressed="false"><svg class="i"><use href="#i-moon"/></svg><span>Dark</span></button>
+</header>
+
+<main>
+
+<!-- COLOURS -->
+<section id="colors">
+  <p class="eyebrow">01 · Colour</p>
+  <h2>Indigo Ink, on a calm ledger</h2>
+  <p class="lede">Indigo means <b>you can act here</b>: buttons, links, active navigation, focus. It is never used for a status. Surfaces are quiet neutrals with hairline borders.</p>
+  <div class="grid sw-grid" id="swatches"></div>
+  <p class="cap muted" style="margin:16px 0 8px">Brand scale (charts and illustrations only)</p>
+  <div class="scale" id="brandscale"></div>
+  <p class="cap muted" style="margin:16px 0 8px">Neutral scale</p>
+  <div class="scale" id="neutralscale"></div>
+</section>
+
+<!-- STATUS -->
+<section id="status">
+  <p class="eyebrow">02 · Attendance status</p>
+  <h2>Every status: colour + icon + word</h2>
+  <p class="lede">Distinguishable without colour: each status has its own icon shape and letter code. Pending is the only dashed outline. Try greyscale with <button class="btn-link btn" id="gray" style="font-size:14px">toggle greyscale</button>.</p>
+  <div class="card" style="overflow:auto">
+    <table class="status-table" id="statusTable">
+      <thead><tr><th>Status</th><th>Pill</th><th>Grid code</th><th>Solid</th><th>Tint / text</th><th>Contrast (light · dark)</th></tr></thead>
+      <tbody></tbody>
+    </table>
+  </div>
+</section>
+
+<!-- TYPE -->
+<section id="type">
+  <p class="eyebrow">03 · Typography</p>
+  <h2>Inter, with numbers that line up</h2>
+  <p class="lede">One free typeface. Every time, date and count uses tabular figures, so <span class="tnum">09:05</span> and <span class="tnum">11:11</span> line up in a column.</p>
+  <div class="split">
+    <div class="card pad">
+      <h3 style="margin-bottom:6px">Desktop / admin</h3>
+      <div class="type-row"><span class="cap muted">display 32/40</span><span class="tnum" style="font-size:32px;line-height:40px;font-weight:600;letter-spacing:-.02em">42</span><span class="cap muted">stat value</span></div>
+      <div class="type-row"><span class="cap muted">title-1 24/32</span><span style="font-size:24px;line-height:32px;font-weight:600;letter-spacing:-.01em">Attendance register</span><span class="cap muted">page title</span></div>
+      <div class="type-row"><span class="cap muted">title-2 18/26</span><span style="font-size:18px;line-height:26px;font-weight:600">Pending approvals</span><span class="cap muted">section</span></div>
+      <div class="type-row"><span class="cap muted">title-3 16/24</span><span style="font-size:16px;font-weight:600">Casual leave</span><span class="cap muted">card title</span></div>
+      <div class="type-row"><span class="cap muted">body 14/20</span><span>Checked in at <span class="tnum">09:42 AM</span> from the office.</span><span class="cap muted">default</span></div>
+      <div class="type-row"><span class="cap muted">cell 13/18</span><span class="tnum" style="font-size:13px">09:05 AM · 06:31 PM · 9h 26m</span><span class="cap muted">dense table</span></div>
+      <div class="type-row"><span class="cap muted">label 13/18</span><span style="font-size:13px;font-weight:500">Department</span><span class="cap muted">form label</span></div>
+      <div class="type-row"><span class="cap muted">caption 12/16</span><span class="cap muted">Last edited by Lakshmi N · 06 Nov, 10:42 AM</span><span class="cap muted">hint</span></div>
+      <div class="type-row"><span class="cap muted">col-header 12/16</span><span style="font-size:12px;font-weight:600;color:var(--ad-text-muted)">Worked hours</span><span class="cap muted">table header</span></div>
+    </div>
+    <div class="card pad">
+      <h3 style="margin-bottom:6px">Mobile / employee</h3>
+      <div class="type-row" style="grid-template-columns:110px 1fr"><span class="cap muted">clock 44/48</span><span class="clock tnum">09:42<small>:18</small><em>AM</em></span></div>
+      <div class="type-row" style="grid-template-columns:110px 1fr"><span class="cap muted">m-title 22/28</span><span style="font-size:22px;line-height:28px;font-weight:600">Good morning, Priya</span></div>
+      <div class="type-row" style="grid-template-columns:110px 1fr"><span class="cap muted">m-section 18/24</span><span style="font-size:18px;font-weight:600">This week</span></div>
+      <div class="type-row" style="grid-template-columns:110px 1fr"><span class="cap muted">m-body 16/24</span><span style="font-size:16px;line-height:24px">Your leave request was approved.</span></div>
+      <div class="type-row" style="grid-template-columns:110px 1fr"><span class="cap muted">m-button 16/24</span><span style="font-size:16px;font-weight:600">Apply for leave</span></div>
+      <div class="type-row" style="grid-template-columns:110px 1fr"><span class="cap muted">m-meta 14/20</span><span class="tnum" style="font-size:14px;font-weight:500">Thu 05 Nov · 09:31 AM – 06:40 PM</span></div>
+      <div class="type-row" style="grid-template-columns:110px 1fr"><span class="cap muted">m-caption 13/18</span><span style="font-size:13px;font-weight:500;color:var(--ad-text-muted)">Hold the button to check in</span></div>
+    </div>
+  </div>
+</section>
+
+<!-- BUTTONS -->
+<section id="buttons">
+  <p class="eyebrow">04 · Buttons</p>
+  <h2>One primary per view</h2>
+  <p class="lede">Hover, focus, disabled and loading states for each variant. Desktop default is 40px, mobile 48px, check-in hero 64px.</p>
+  <div class="card pad">
+    <div class="state-grid">
+      <span></span><span class="h">Default</span><span class="h">Hover</span><span class="h">Focus</span><span class="h">Disabled</span><span class="h">Loading</span>
+      <span class="h">Primary</span>
+      <button class="btn btn-primary"><svg class="i"><use href="#i-plus"/></svg>Mark attendance</button>
+      <button class="btn btn-primary is-hover">Mark attendance</button>
+      <button class="btn btn-primary is-focus">Mark attendance</button>
+      <button class="btn btn-primary" disabled>Mark attendance</button>
+      <button class="btn btn-primary" aria-busy="true"><span class="spin"></span>Saving…</button>
+      <span class="h">Secondary</span>
+      <button class="btn btn-secondary"><svg class="i"><use href="#i-down"/></svg>Export</button>
+      <button class="btn btn-secondary is-hover">Export</button>
+      <button class="btn btn-secondary is-focus">Export</button>
+      <button class="btn btn-secondary" disabled>Export</button>
+      <button class="btn btn-secondary" aria-busy="true"><span class="spin"></span>Exporting…</button>
+      <span class="h">Ghost</span>
+      <button class="btn btn-ghost">Cancel</button>
+      <button class="btn btn-ghost is-hover">Cancel</button>
+      <button class="btn btn-ghost is-focus">Cancel</button>
+      <button class="btn btn-ghost" disabled>Cancel</button>
+      <button class="btn btn-ghost" aria-busy="true"><span class="spin"></span>Wait</button>
+      <span class="h">Danger</span>
+      <button class="btn btn-danger">Delete holiday</button>
+      <button class="btn btn-danger" style="filter:brightness(.92)">Delete holiday</button>
+      <button class="btn btn-danger is-focus">Delete holiday</button>
+      <button class="btn btn-danger" disabled>Delete holiday</button>
+      <button class="btn btn-danger" aria-busy="true"><span class="spin"></span>Deleting…</button>
+    </div>
+    <div class="row" style="margin-top:20px;border-top:1px solid var(--ad-border);padding-top:16px">
+      <span class="cap muted" style="width:110px">Sizes</span>
+      <button class="btn btn-primary btn-sm">Small 32</button>
+      <button class="btn btn-primary">Medium 40</button>
+      <button class="btn btn-primary btn-lg">Large 48</button>
+      <button class="btn btn-link">View all requests</button>
+      <button class="btn btn-ghost" aria-label="More actions" style="width:40px;padding:0"><svg class="i"><use href="#i-dots"/></svg></button>
+    </div>
+  </div>
+</section>
+
+<!-- MOBILE -->
+<section id="mobile">
+  <p class="eyebrow">05 · Employee mobile home</p>
+  <h2>The check-in hero</h2>
+  <p class="lede">One card, one action. Live time, today's status and worked hours. On touch, <b>press and hold</b> to confirm (pocket-safe); a click works on desktop. Try it.</p>
+  <div class="split">
+    <div class="phone" role="img" aria-label="Mobile check-in screen mockup">
+      <div class="screen">
+        <div class="sbar tnum"><span id="sbtime">9:41</span><span>●●●● 5G ▮</span></div>
+        <div class="scroll">
+          <p class="cap muted" style="margin:6px 0 0" id="today-date">Friday, 06 Nov 2026</p>
+          <p class="greet">Good morning, Priya</p>
+          <div class="hero">
+            <div class="row" style="justify-content:space-between">
+              <span class="pill st-neutral" id="heroPill"><svg class="i"><use href="#i-in"/></svg>Not checked in</span>
+              <span class="cap muted tnum">General · 9:30 AM – 6:30 PM</span>
+            </div>
+            <div class="clock tnum" style="margin-top:14px" id="clock" aria-hidden="true">09:42<small>:18</small><em>AM</em></div>
+            <p class="cap muted" style="margin:2px 0 0" id="clockDate">Friday, 06 Nov 2026</p>
+            <button class="hero-btn in" id="heroBtn"><span class="fill"></span><svg class="i"><use href="#i-in"/></svg><span id="heroLabel">Check in</span></button>
+            <p class="hint" id="hint" aria-live="polite">Hold to check in · on time until 9:45 AM</p>
+            <div class="minis">
+              <div class="mini"><div class="l">Checked in</div><div class="v tnum" id="mIn">—</div></div>
+              <div class="mini"><div class="l">Worked</div><div class="v tnum" id="mWorked">0h 00m</div></div>
+              <div class="mini"><div class="l">Expected out</div><div class="v tnum" id="mOut">6:30 PM</div></div>
+            </div>
+            <div class="bar" aria-hidden="true"><div id="bar" style="width:0%"></div></div>
+            <div class="row" style="margin-top:12px">
+              <span class="pill st-present"><svg class="i"><use href="#i-pin"/></svg>At office</span>
+            </div>
+          </div>
+          <p style="font-size:18px;font-weight:600;margin:20px 0 0">This week</p>
+          <div class="week" id="week"></div>
+          <div class="card" style="margin-top:16px;padding:14px">
+            <div class="row" style="justify-content:space-between"><b>Leave balance</b><a class="btn-link btn" style="font-size:13px">Apply</a></div>
+            <div class="row" style="margin-top:10px"><span class="pill st-leave tnum">Casual 9</span><span class="pill st-leave tnum">Sick 6</span><span class="pill st-neutral tnum">Earned 12</span></div>
+          </div>
+        </div>
+        <nav class="tabbar" aria-label="Main">
+          <span class="tab on"><svg class="i"><use href="#i-home"/></svg>Home</span>
+          <span class="tab"><svg class="i"><use href="#i-cal"/></svg>Attendance</span>
+          <span class="tab"><svg class="i"><use href="#i-palm"/></svg>Leave</span>
+          <span class="tab"><svg class="i"><use href="#i-user"/></svg>Me</span>
+        </nav>
+      </div>
+    </div>
+    <div class="grid" style="gap:16px">
+      <div class="card pad">
+        <h3>Hero button states</h3>
+        <div class="grid" style="gap:10px;margin-top:12px">
+          <button class="hero-btn in" style="margin:0" tabindex="-1"><svg class="i"><use href="#i-in"/></svg><span>Check in</span></button>
+          <button class="hero-btn out" style="margin:0" tabindex="-1"><svg class="i"><use href="#i-out"/></svg><span>Check out</span></button>
+          <button class="hero-btn done" style="margin:0" tabindex="-1"><svg class="i"><use href="#i-check"/></svg><span>Done for today</span></button>
+          <button class="hero-btn" style="margin:0;background:var(--ad-surface-sunken);color:var(--ad-text-secondary);cursor:not-allowed" tabindex="-1"><svg class="i"><use href="#i-party"/></svg><span>No shift today · Diwali</span></button>
+        </div>
+      </div>
+      <div class="card pad">
+        <h3>Error stays under the button</h3>
+        <div class="note" style="background:var(--ad-danger-subtle);color:var(--ad-danger);margin-top:12px;font-size:13px">
+          <svg class="i"><use href="#i-circle-alert"/></svg>
+          <div>You're 1.2 km from the office. Move closer, or ask HR for an on-duty request. <a class="btn-link btn" style="font-size:13px;color:inherit;text-decoration:underline">Try again</a></div>
+        </div>
+        <div class="toast" style="margin-top:12px"><svg class="i" style="color:var(--ad-success)"><use href="#i-check"/></svg><span>Leave request sent to Lakshmi N.</span><a class="btn-link btn" style="margin-left:auto;font-size:13px">Undo</a></div>
+      </div>
+      <div class="card pad">
+        <h3>Desktop sidebar</h3>
+        <div class="sidebar-demo" style="border:0;padding:8px 0 0;width:100%">
+          <div class="nav-g">Workspace</div>
+          <div class="nav-i on"><svg class="i"><use href="#i-grid"/></svg>Dashboard</div>
+          <div class="nav-i"><svg class="i"><use href="#i-users"/></svg>Register</div>
+          <div class="nav-i"><svg class="i"><use href="#i-cal"/></svg>Calendar</div>
+          <div class="nav-g">People</div>
+          <div class="nav-i"><svg class="i"><use href="#i-palm"/></svg>Leave<span class="badge tnum">4</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- STATS -->
+<section id="cards">
+  <p class="eyebrow">06 · Stat cards</p>
+  <h2>Today at a glance</h2>
+  <p class="lede">Clicking a card filters the register. Trends use an arrow and a word, never colour alone.</p>
+  <div class="grid stats">
+    <div class="card stat" tabindex="0"><div class="top-row">Present today<span class="ico st-present"><svg class="i"><use href="#i-check"/></svg></span></div><div class="val tnum">38</div><div class="cap muted tnum">of 48 employees · <span class="trend" style="color:var(--ad-success)"><svg class="i" style="width:12px;height:12px"><use href="#i-up"/></svg>3 vs yesterday</span></div></div>
+    <div class="card stat" tabindex="0"><div class="top-row">Absent<span class="ico st-absent"><svg class="i"><use href="#i-x"/></svg></span></div><div class="val tnum">3</div><div class="cap muted tnum">2 without leave</div></div>
+    <div class="card stat" tabindex="0"><div class="top-row">Late<span class="ico st-late"><svg class="i"><use href="#i-late"/></svg></span></div><div class="val tnum">5</div><div class="cap muted tnum">avg 14m late · <span class="trend" style="color:var(--ad-danger)"><svg class="i" style="width:12px;height:12px"><use href="#i-up"/></svg>2</span></div></div>
+    <div class="card stat" tabindex="0"><div class="top-row">On leave<span class="ico st-leave"><svg class="i"><use href="#i-palm"/></svg></span></div><div class="val tnum">2</div><div class="cap muted tnum">1 more tomorrow</div></div>
+  </div>
+</section>
+
+<!-- REGISTER -->
+<section id="register">
+  <p class="eyebrow">07 · Daily attendance register</p>
+  <h2>The register, in place of the Excel sheet</h2>
+  <p class="lede">Sticky toolbar and header, status filter chips with counts, right-aligned tabular times, bulk actions on selection. Tick a row to see the bulk bar.</p>
+  <div class="card" style="overflow:hidden">
+    <div class="toolbar">
+      <div class="stepper"><button aria-label="Previous day"><svg class="i"><use href="#i-left"/></svg></button><b class="tnum">06 Nov 2026</b><button aria-label="Next day"><svg class="i"><use href="#i-right"/></svg></button></div>
+      <button class="btn btn-ghost btn-sm">Today</button>
+      <label class="search"><svg class="i"><use href="#i-search"/></svg><input placeholder="Search name or code" aria-label="Search employees"></label>
+      <div class="row" id="fchips"></div>
+      <div class="row" style="margin-left:auto"><button class="btn btn-secondary btn-sm"><svg class="i"><use href="#i-down"/></svg>Export</button><button class="btn btn-primary btn-sm"><svg class="i"><use href="#i-plus"/></svg>Mark attendance</button></div>
+    </div>
+    <div class="bulk" id="bulk" hidden><span id="bulkN">1 selected</span><button class="btn btn-secondary btn-sm">Mark present</button><button class="btn btn-secondary btn-sm">Mark absent</button><button class="btn btn-secondary btn-sm">Add remark</button><button class="btn btn-link" style="margin-left:auto;font-size:13px" id="clearSel">Clear</button></div>
+    <div class="tbl-wrap">
+      <table class="reg" aria-label="Daily register, 06 Nov 2026">
+        <thead><tr><th style="width:40px"><span class="cb"></span></th><th>Employee</th><th>Department</th><th>Shift</th><th class="r">In</th><th class="r">Out</th><th class="r">Worked</th><th>Status</th><th></th></tr></thead>
+        <tbody id="regBody"></tbody>
+      </table>
+    </div>
+    <div class="reg-cards" id="regCards" aria-label="Daily register (cards)"></div>
+    <div class="toolbar" style="border-top:1px solid var(--ad-border);border-bottom:0;justify-content:space-between"><span class="cap muted tnum">1–8 of 48</span><div class="row"><button class="btn btn-ghost btn-sm" aria-label="Previous page"><svg class="i"><use href="#i-left"/></svg></button><button class="btn btn-ghost btn-sm" aria-label="Next page"><svg class="i"><use href="#i-right"/></svg></button></div></div>
+  </div>
+  <div class="grid two" style="grid-template-columns:1fr 1fr;margin-top:16px">
+    <div class="card pad"><p class="cap muted" style="margin:0 0 10px">Loading state (skeleton matches the final layout)</p><div class="grid" style="gap:14px" id="skel"></div></div>
+    <div class="card empty"><div class="ring"><svg class="i"><use href="#i-search"/></svg></div><h3>No one matches "ravi"</h3><p class="sec" style="margin:4px 0 14px">Check the spelling or search by employee code.</p><button class="btn btn-secondary btn-sm">Clear search</button></div>
+  </div>
+</section>
+
+<!-- CALENDAR -->
+<section id="calendar">
+  <p class="eyebrow">08 · Monthly calendar grid</p>
+  <h2>Employee × date, colour-coded with letters</h2>
+  <p class="lede">Sticky names, sticky dates and a sticky summary column. Today's column is ringed, weekly offs are hatched, the corner dot means edited by HR, and a red underline means a missing punch-out. Hover a cell for details.</p>
+  <div class="card" style="overflow:hidden">
+    <div class="toolbar">
+      <div class="stepper"><button aria-label="Previous month"><svg class="i"><use href="#i-left"/></svg></button><b>November 2026</b><button aria-label="Next month"><svg class="i"><use href="#i-right"/></svg></button></div>
+      <div style="margin-left:auto" class="row"><button class="btn btn-secondary btn-sm"><svg class="i"><use href="#i-down"/></svg>Excel</button><button class="btn btn-secondary btn-sm"><svg class="i"><use href="#i-down"/></svg>PDF</button></div>
+    </div>
+    <div class="legend" id="legend"></div>
+    <div class="mg-wrap"><table class="mg" id="mg" aria-label="November 2026 attendance"></table></div>
+  </div>
+</section>
+
+<!-- LEAVE + FORM -->
+<section id="forms">
+  <p class="eyebrow">09 · Leave & forms</p>
+  <h2>Approve in one look; forms that explain themselves</h2>
+  <p class="lede">The leave card shows the dates, the balance impact and team conflicts before you decide. Rejecting needs a comment.</p>
+  <div class="split two" style="grid-template-columns:1fr 1fr">
+    <div class="grid" style="gap:16px">
+      <div class="card leave">
+        <div class="row" style="justify-content:space-between">
+          <div class="emp"><span class="av">AR</span><div><b>Anitha Raman</b><span>EMP002 · Operations</span></div></div>
+          <span class="pill st-pending"><svg class="i"><use href="#i-hour"/></svg>Pending</span>
+        </div>
+        <div class="row" style="margin-top:12px"><span class="pill st-leave"><svg class="i"><use href="#i-palm"/></svg>Casual leave</span><span class="cap muted">Applied 05 Nov, 6:12 PM</span></div>
+        <div class="dates tnum">14 – 16 Jan 2027 · 3 days</div>
+        <div class="cap sec tnum">Balance 12 → 9</div>
+        <div class="quote">Family function in Madurai. I'll finish the vendor reconciliation before I leave.</div>
+        <div class="note"><svg class="i"><use href="#i-alert"/></svg>2 others from Operations are on leave on 15 Jan.</div>
+        <div class="row" style="margin-top:14px"><button class="btn btn-primary"><svg class="i"><use href="#i-tick"/></svg>Approve</button><button class="btn btn-secondary" style="color:var(--ad-danger)" id="rejectBtn">Reject</button></div>
+        <div id="rejectBox" hidden style="margin-top:12px" class="field">
+          <label for="rc">Reason for rejecting <span class="req">*</span></label>
+          <textarea id="rc" class="input err" style="height:72px;padding:10px 12px" placeholder="Tell Anitha why, so she can re-plan"></textarea>
+          <span class="help err"><svg class="i" style="width:14px;height:14px"><use href="#i-circle-alert"/></svg>A comment is needed to reject.</span>
+        </div>
+      </div>
+      <div class="card decided"><span class="pill st-present"><svg class="i"><use href="#i-check"/></svg>Approved</span><span class="tnum">Karthik S · Sick leave · 03 Nov 2026 · Approved by Lakshmi N, 03 Nov 10:42 AM</span></div>
+      <div class="card empty"><div class="ring"><svg class="i"><use href="#i-inbox"/></svg></div><h3>No leave requests yet</h3><p class="sec" style="margin:4px 0 0">When your team applies for leave, it shows up here.</p></div>
+    </div>
+    <form class="card pad grid" style="gap:16px" onsubmit="return false" aria-label="Apply for leave">
+      <h3>Apply for leave</h3>
+      <div class="seg" role="radiogroup" aria-label="Duration"><button type="button" class="on" role="radio" aria-checked="true">Full days</button><button type="button" role="radio" aria-checked="false">Half day</button></div>
+      <div class="field"><label for="lt">Leave type <span class="req">*</span></label><select id="lt" class="select input"><option>Casual leave · 9 left</option><option>Sick leave · 6 left</option></select></div>
+      <div class="grid" style="grid-template-columns:1fr 1fr">
+        <div class="field"><label for="fd">From</label><input id="fd" class="input tnum" value="14 Jan 2027"></div>
+        <div class="field"><label for="td">To</label><input id="td" class="input tnum" value="16 Jan 2027"></div>
+      </div>
+      <div class="chips"><button type="button" class="chip">Today</button><button type="button" class="chip">Tomorrow</button><button type="button" class="chip">Next week</button></div>
+      <div class="card" style="padding:12px">
+        <div class="row" style="justify-content:space-between;margin-bottom:8px"><button type="button" class="btn btn-ghost btn-sm" aria-label="Previous month"><svg class="i"><use href="#i-left"/></svg></button><b>January 2027</b><button type="button" class="btn btn-ghost btn-sm" aria-label="Next month"><svg class="i"><use href="#i-right"/></svg></button></div>
+        <div class="dp" id="dp"></div>
+      </div>
+      <div class="field"><label for="st">Start time <span class="cap muted">(permission only)</span></label><input id="st" class="input tnum" value="04:00 PM" disabled></div>
+      <div class="field"><label for="rs">Reason <span class="req">*</span></label><input id="rs" class="input err" placeholder="e.g. Family function"><span class="help err"><svg class="i" style="width:14px;height:14px"><use href="#i-circle-alert"/></svg>Add a short reason so your manager can decide.</span></div>
+      <div class="field"><label for="ph">Contact while away</label><input id="ph" class="input tnum" inputmode="numeric" placeholder="98765 43210"><span class="help">Optional. Only your manager sees it.</span></div>
+      <div class="row" style="justify-content:flex-end"><button type="button" class="btn btn-ghost">Cancel</button><button class="btn btn-primary">Send request</button></div>
+    </form>
+  </div>
+</section>
+
+<p class="cap muted" style="text-align:center;margin:24px 0 8px">Attendance Desk · design preview · all people and data are fictional</p>
+</main>
+
+<script>
+const STATUS=[
+ {k:'present',name:'Present',code:'P',icon:'check',c:'8.0 · 9.2'},
+ {k:'absent',name:'Absent',code:'A',icon:'x',c:'6.9 · 8.5'},
+ {k:'late',name:'Late',code:'L',icon:'late',c:'6.8 · 9.8'},
+ {k:'halfday',name:'Half-day',code:'H',icon:'half',c:'6.8 · 9.1'},
+ {k:'leave',name:'On leave',code:'LV',icon:'palm',c:'7.3 · 8.6'},
+ {k:'holiday',name:'Holiday',code:'HO',icon:'party',c:'8.0 · 8.2'},
+ {k:'weeklyoff',name:'Weekly off',code:'WO',icon:'moon',c:'7.4 · 7.5'},
+ {k:'pending',name:'Pending approval',code:'?',icon:'hour',c:'8.6 · 8.8'},
+];
+const S=Object.fromEntries(STATUS.map(s=>[s.k,s]));
+const ic=(n,st='')=>`<svg class="i" ${st}><use href="#i-${n}"/></svg>`;
+const pill=k=>`<span class="pill st-${k}">${ic(S[k].icon)}${S[k].name}</span>`;
+const code=k=>`<span class="code st-${k}" aria-label="${S[k].name}">${S[k].code}</span>`;
+const css=v=>getComputedStyle(document.documentElement).getPropertyValue(v).trim();
+
+function swatches(){
+  const sw=[['Brand','--ad-brand'],['Brand hover','--ad-brand-hover'],['Brand text','--ad-brand-text'],['Brand subtle','--ad-brand-subtle'],['Canvas','--ad-canvas'],['Surface','--ad-surface'],['Sunken','--ad-surface-sunken'],['Raised','--ad-surface-raised'],['Border','--ad-border'],['Border strong','--ad-border-strong'],['Text','--ad-text'],['Text secondary','--ad-text-secondary'],['Text muted','--ad-text-muted'],['Danger','--ad-danger'],['Success','--ad-success'],['Info','--ad-info']];
+  document.getElementById('swatches').innerHTML=sw.map(([n,v])=>`<div class="sw"><div class="chip" style="background:var(${v})"></div><div class="meta"><b>${n}</b><span>${v} · ${css(v)}</span></div></div>`).join('');
+  const bs=[['50','#EEEDFD'],['100','#E0DEFC'],['200','#C5C1F9'],['300','#A39CF4'],['400','#7C73EE'],['500','#5B50E6'],['600','#4338E0'],['700','#372CC0'],['800','#2D249B'],['900','#231C75']];
+  document.getElementById('brandscale').innerHTML=bs.map(([s,h],i)=>`<div style="background:${h};color:${i<4?'#231C75':'#fff'}">${s}</div>`).join('');
+  const ns=[['0','#FFFFFF'],['50','#F7F7F5'],['100','#F1F1EE'],['200','#E4E4E0'],['300','#CFCFC9'],['400','#8A8B93'],['500','#7A7A82'],['600','#63646B'],['700','#45464D'],['800','#2C2D33'],['900','#17171A'],['950','#0E0E11']];
+  document.getElementById('neutralscale').innerHTML=ns.map(([s,h],i)=>`<div style="background:${h};color:${i<5?'#17171A':'#fff'}">${s}</div>`).join('');
+}
+function statusTable(){
+  document.querySelector('#statusTable tbody').innerHTML=STATUS.map(s=>`<tr><td><b>${s.name}</b></td><td>${pill(s.k)}</td><td>${code(s.k)}</td><td><span class="dot" style="background:var(--ad-${s.k})"></span></td><td class="cap tnum" style="color:var(--ad-text-muted)">${css('--ad-'+s.k+'-tint')} / ${css('--ad-'+s.k+'-fg')}</td><td class="cap tnum">${s.c}</td></tr>`).join('');
+}
+
+// Register
+const PEOPLE=[
+ ['Anitha Raman','EMP002','Operations','General','09:12 AM','06:34 PM','9h 22m','present'],
+ ['Karthik Subramanian','EMP003','Operations','General','09:58 AM','06:51 PM','8h 53m','late','+13m'],
+ ['Divya Prakash','EMP004','Accounts','General','—','—','—','leave'],
+ ['Praveen Kumar','EMP005','Sales','Field','09:27 AM','—','6h 15m','present','',true],
+ ['Meena Krishnan','EMP006','Accounts','General','—','—','—','absent'],
+ ['Lakshmi Narayanan','EMP001','HR','General','09:05 AM','01:40 PM','4h 35m','halfday'],
+ ['Rahul Varma','EMP007','Sales','Field','—','—','—','pending'],
+ ['Fathima Begum','EMP008','Operations','General','09:31 AM','06:30 PM','8h 59m','present'],
+];
+const initials=n=>n.split(' ').map(p=>p[0]).join('').slice(0,2);
+const sel=new Set([1]);
+function register(){
+  document.getElementById('regBody').innerHTML=PEOPLE.map((p,i)=>`<tr class="${sel.has(i)?'sel':''}" data-i="${i}">
+    <td><span class="cb ${sel.has(i)?'on':''}" role="checkbox" aria-checked="${sel.has(i)}" tabindex="0">${sel.has(i)?ic('tick'):''}</span></td>
+    <td><div class="emp"><span class="av">${initials(p[0])}</span><div><b>${p[0]}</b><span>${p[1]}</span></div></div></td>
+    <td>${p[2]}</td><td>${p[3]}</td>
+    <td class="r tnum" style="color:var(--ad-text)">${p[4]}${p[8]?`<span class="late-by">${p[8]}</span>`:''}</td>
+    <td class="r tnum">${p[5]==='—'&&p[9]?`<span style="color:var(--ad-danger);font-weight:600" title="Missing punch-out">${ic('alert','style="width:14px;height:14px;vertical-align:-2px"')} Missing</span>`:p[5]}</td>
+    <td class="r tnum">${p[6]}</td><td>${pill(p[7])}</td>
+    <td><button class="btn btn-ghost btn-sm" aria-label="Row actions" style="width:32px;padding:0">${ic('dots')}</button></td></tr>`).join('');
+  document.getElementById('regCards').innerHTML=PEOPLE.map(p=>`<div class="rc"><div class="row" style="justify-content:space-between;flex-wrap:nowrap"><div class="emp"><span class="av">${initials(p[0])}</span><div><b>${p[0]}</b><span>${p[1]} · ${p[2]}</span></div></div>${pill(p[7])}</div><div class="times tnum"><div><div class="l">In</div><div class="v">${p[4]}</div></div><div><div class="l">Out</div><div class="v">${p[5]==='—'&&p[9]?'<span style="color:var(--ad-danger)">Missing</span>':p[5]}</div></div><div><div class="l">Worked</div><div class="v">${p[6]}</div></div></div></div>`).join('');
+  const b=document.getElementById('bulk');b.hidden=!sel.size;document.getElementById('bulkN').textContent=`${sel.size} selected`;
+  document.querySelectorAll('#regBody .cb').forEach(el=>el.addEventListener('click',()=>{const i=+el.closest('tr').dataset.i;sel.has(i)?sel.delete(i):sel.add(i);register()}));
+}
+document.getElementById('clearSel').onclick=()=>{sel.clear();register()};
+function fchips(){
+  const counts={present:38,late:5,absent:3,leave:2,halfday:1,pending:1};
+  document.getElementById('fchips').innerHTML=Object.entries(counts).map(([k,n],i)=>`<button class="fchip ${i===1?'on':''}" aria-pressed="${i===1}">${pill(k)}<span class="n">${n}</span></button>`).join('');
+  document.querySelectorAll('.fchip').forEach(b=>b.onclick=()=>{b.classList.toggle('on');b.setAttribute('aria-pressed',b.classList.contains('on'))});
+  document.getElementById('skel').innerHTML=Array.from({length:4},()=>`<div class="row" style="gap:14px;flex-wrap:nowrap"><span class="skel" style="width:28px;height:28px;border-radius:50%"></span><span class="skel" style="width:30%"></span><span class="skel" style="width:14%;margin-left:auto"></span><span class="skel" style="width:14%"></span><span class="skel" style="width:70px;height:20px;border-radius:999px"></span></div>`).join('');
+}
+
+// Month grid (November 2026: 1st is a Sunday; Sundays + 2nd/4th Saturday off; Diwali 08 is a holiday; today = 06)
+function monthGrid(){
+  const days=30,today=6,wd=d=>new Date(Date.UTC(2026,10,d)).getUTCDay();
+  const off=d=>wd(d)===0||(wd(d)===6&&[2,4].includes(Math.ceil(d/7)));
+  const hol=d=>d===8;
+  const names=PEOPLE.map(p=>[p[0],p[1]]);
+  const pattern=(r,d)=>{
+    if(d>today) return 'future';
+    if(hol(d)) return 'holiday';
+    if(off(d)) return 'weeklyoff';
+    const seq=[['present','present','late','present','present','present','present'],['late','present','present','late','present','present','late'],['present','leave','leave','present','present','present','present'],['present','present','present','halfday','present','present','present'],['present','absent','present','present','present','absent','present'],['present','present','present','present','late','present','present'],['present','present','pending','present','present','present','present'],['present','present','present','present','present','late','present']];
+    return seq[r][d%7];
+  };
+  const W=['S','M','T','W','T','F','S'];
+  let h='<thead><tr><th class="name" style="text-align:left;font-size:12px">Employee</th>';
+  for(let d=1;d<=days;d++) h+=`<th class="${off(d)||hol(d)?'off':''} ${d===today?'today':''}">${W[wd(d)]}<span class="d">${String(d).padStart(2,'0')}</span></th>`;
+  h+='<th class="sum" style="font-size:12px">P · A · L · LV</th></tr></thead><tbody>';
+  names.forEach(([n,c],r)=>{
+    const cnt={present:0,absent:0,late:0,leave:0};
+    h+=`<tr><td class="name"><div class="emp"><span class="av">${initials(n)}</span><div><b style="font-size:13px">${n}</b><span>${c}</span></div></div></td>`;
+    for(let d=1;d<=days;d++){
+      const st=pattern(r,d); if(cnt[st]!==undefined)cnt[st]++;
+      const extra=(r===3&&d===5)?'<span class="miss"></span>':(r===1&&d===3)?'<span class="edit"></span>':'';
+      if(st==='future') h+=`<td><div class="cell future" title="${d} Nov · upcoming"></div></td>`;
+      else h+=`<td><div class="cell st-${st} ${st==='weeklyoff'?'wo':''} ${d===today?'today-col':''}" title="${String(d).padStart(2,'0')} Nov 2026 · ${S[st].name}${st==='present'?' · 09:12 AM – 06:34 PM':''}${extra.includes('miss')?' · missing punch-out':''}${extra.includes('edit')?' · edited by HR':''}" aria-label="${d} November, ${S[st].name}">${S[st].code}${extra}</div></td>`;
+    }
+    h+=`<td class="sum tnum">${cnt.present} · ${cnt.absent} · ${cnt.late} · ${cnt.leave}</td></tr>`;
+  });
+  document.getElementById('mg').innerHTML=h+'</tbody>';
+  document.getElementById('legend').innerHTML=STATUS.map(s=>`<span>${code(s.k)}${s.name}</span>`).join('')+`<span><span class="cell st-present" style="width:20px;height:20px;font-size:9px">P<span class="edit" style="top:2px;right:2px"></span></span>Edited by HR</span><span><span class="cell st-present" style="width:20px;height:20px;font-size:9px">P<span class="miss" style="left:3px;right:3px"></span></span>Missing punch-out</span>`;
+}
+
+// Date picker (Jan 2027 starts Friday; 14–16 selected; 15 & 16 holidays)
+function datePicker(){
+  let h=['M','T','W','T','F','S','S'].map(x=>`<span class="h">${x}</span>`).join('');
+  const lead=4; for(let i=0;i<lead;i++) h+=`<span class="d mute">${28+i}</span>`;
+  for(let d=1;d<=31;d++){const cls=d===14||d===16?'end':(d===15?'range':'');h+=`<span class="d ${cls} ${d===6?'today':''}">${d}${[15,16].includes(d)?'<span class="hd"></span>':''}</span>`}
+  document.getElementById('dp').innerHTML=h;
+}
+
+// Mobile hero: live clock + hold-to-check-in
+const fmtDate=new Intl.DateTimeFormat('en-GB',{weekday:'long',day:'2-digit',month:'short',year:'numeric',timeZone:'Asia/Kolkata'});
+function tick(){
+  const now=new Date();
+  const p=new Intl.DateTimeFormat('en-GB',{hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:true,timeZone:'Asia/Kolkata'}).formatToParts(now);
+  const g=t=>p.find(x=>x.type===t)?.value;
+  document.getElementById('clock').innerHTML=`${g('hour')}:${g('minute')}<small>:${g('second')}</small><em>${(g('dayPeriod')||'').toUpperCase()}</em>`;
+  document.getElementById('sbtime').textContent=`${Number(g('hour'))}:${g('minute')}`;
+  const ds=fmtDate.format(now).replace(/^(\w+) /,'$1, ');
+  document.getElementById('clockDate').textContent=ds;document.getElementById('today-date').textContent=ds;
+  if(state==='working'){const m=Math.max(1,Math.round((Date.now()-inAt)/60000));document.getElementById('mWorked').textContent=`${Math.floor(m/60)}h ${String(m%60).padStart(2,'0')}m`;document.getElementById('bar').style.width=Math.min(100,m/540*100)+'%'}
+}
+let state='idle',inAt=0,holdT=null,raf=0;
+const btn=document.getElementById('heroBtn'),fill=btn.querySelector('.fill'),hint=document.getElementById('hint');
+function commit(){
+  const t=new Intl.DateTimeFormat('en-GB',{hour:'2-digit',minute:'2-digit',hour12:true,timeZone:'Asia/Kolkata'}).format(new Date()).toUpperCase();
+  if(state==='idle'){state='working';inAt=Date.now();btn.className='hero-btn out';btn.querySelector('use').setAttribute('href','#i-out');document.getElementById('heroLabel').textContent='Check out';
+    document.getElementById('heroPill').outerHTML=`<span class="pill st-present" id="heroPill">${ic('check')}Present</span>`;document.getElementById('mIn').textContent=t;
+    hint.innerHTML=`<span class="confirm" style="justify-content:center">${ic('check','style="width:14px;height:14px"')}Checked in at ${t} · recorded by server</span>`;}
+  else if(state==='working'){state='done';btn.className='hero-btn done';btn.querySelector('use').setAttribute('href','#i-check');document.getElementById('heroLabel').textContent='Done for today';
+    hint.innerHTML=`<span class="confirm" style="justify-content:center">${ic('check','style="width:14px;height:14px"')}Checked out at ${t}. See you tomorrow!</span>`;document.getElementById('bar').style.background='var(--ad-success)';}
+  if(navigator.vibrate) navigator.vibrate(20);
+}
+btn.addEventListener('pointerdown',e=>{
+  if(state==='done') return;
+  if(e.pointerType!=='touch'){return}
+  const start=performance.now();hint.textContent='Keep holding…';
+  const step=t=>{const p=Math.min(1,(t-start)/600);fill.style.width=p*100+'%';if(p<1)raf=requestAnimationFrame(step);else{fill.style.width='0';commit()}};
+  raf=requestAnimationFrame(step);
+});
+const cancel=()=>{if(raf){cancelAnimationFrame(raf);raf=0;if(fill.style.width!=='0px'&&fill.style.width!==''&&state!=='done'){fill.style.width='0';if(!hint.querySelector('.confirm'))hint.textContent='Released too soon. Hold for a moment.'}}};
+btn.addEventListener('pointerup',cancel);btn.addEventListener('pointerleave',cancel);btn.addEventListener('pointercancel',cancel);
+btn.addEventListener('click',e=>{if(e.pointerType==='touch')return;if(state!=='done')commit()});
+function week(){
+  const d=[['M','present'],['T','late'],['W','present'],['T','present'],['F','present'],['S','weeklyoff'],['S','weeklyoff']];
+  document.getElementById('week').innerHTML=d.map(([l,k],i)=>`<div>${l}${i===4?`<span class="code" style="background:var(--ad-surface);color:var(--ad-brand-text);box-shadow:0 0 0 2px var(--ad-brand);border-radius:6px;min-width:28px;height:28px">06</span>`:`<span class="code st-${k}" style="min-width:28px;height:28px;border-radius:6px" aria-label="${S[k].name}">${S[k].code}</span>`}</div>`).join('');
+}
+
+// Theme + greyscale
+const tbtn=document.getElementById('theme');
+function setTheme(dark){document.documentElement.classList.toggle('dark',dark);tbtn.setAttribute('aria-pressed',dark);tbtn.querySelector('span').textContent=dark?'Light':'Dark';tbtn.querySelector('use').setAttribute('href',dark?'#i-sun':'#i-moon');swatches();statusTable();try{localStorage.setItem('ad-theme',dark?'dark':'light')}catch{}}
+tbtn.onclick=()=>setTheme(!document.documentElement.classList.contains('dark'));
+document.getElementById('gray').onclick=()=>{document.body.style.filter=document.body.style.filter?'':'grayscale(1)'};
+document.getElementById('rejectBtn').onclick=()=>{const b=document.getElementById('rejectBox');b.hidden=!b.hidden};
+
+let saved=null;try{saved=localStorage.getItem('ad-theme')}catch{}
+setTheme(saved?saved==='dark':matchMedia('(prefers-color-scheme: dark)').matches);
+register();fchips();monthGrid();datePicker();week();tick();setInterval(tick,1000);
+</script>
+</body>
+</html>

@@ -1,0 +1,10 @@
+# https for the attendance app. Caddy requests a free Let's Encrypt certificate for {$DOMAIN}
+# on first start (the domain must already point at this server) and renews it automatically.
+{$DOMAIN} {
+	encode zstd gzip
+	reverse_proxy app:6001
+	# Uploads (Excel imports, attachments) up to the app's own limit.
+	request_body {
+		max_size 12MB
+	}
+}

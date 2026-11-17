@@ -1,0 +1,542 @@
+// Attendance Management System schema.
+// Business dates (IST calendar days) are DATE columns; instants (punches, audit times) are DATETIME(3) in UTC.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+// ---------------------------------------------------------------------------
+// People & access
+// ---------------------------------------------------------------------------
+
+/// SUPER_ADMIN marks the owner account(s): every permission, can never be locked out of access
+/// management. For everyone else, what they may do comes from their AccessRole.
+enum Role {
+  SUPER_ADMIN
+  HR
+  EMPLOYEE
+}
+
+/// Whose data a role's permissions reach.
+enum AccessScope {
+  ALL
+  TEAM
+  SELF
+}
+
+/// A named set of permissions the Super Admin can create and assign (e.g. "Team Lead").
+model AccessRole {
+  id           Int         @id @default(autoincrement())
+  name         String      @unique @db.VarChar(80)
+  description  String      @default("") @db.VarChar(300)
+  /// Permission keys from lib/access/permissions.ts
+  permissions  Json
+  scope        AccessScope @default(SELF)
+  /// People with this role are expected to send a daily report (an employee can override it).
+  dailyReports Boolean     @default(true)
+  /// Set for the built-in roles (SUPER_ADMIN, HR, EMPLOYEE); those can't be deleted.
+  systemKey    String?     @unique @db.VarChar(20)
+  createdAt    DateTime    @default(now()) @db.DateTime(3)
+  updatedAt    DateTime    @updatedAt @db.DateTime(3)
+
+  users User[]
+}
+
+model User {
+  id                 Int       @id @default(autoincrement())
+  /// Display name for sign-ins without an employee record (e.g. the owner)
+  name               String    @default("") @db.VarChar(150)
+  /// Optional short sign-in name (e.g. "admin")
+  username           String?   @unique @db.VarChar(50)
+  email              String?   @unique @db.VarChar(191)
+  phone              String?   @unique @db.VarChar(20)
+  passwordHash       String    @db.VarChar(100)
+  role               Role      @default(EMPLOYEE)
+  isActive           Boolean   @default(true)
+  mustChangePassword Boolean   @default(true)
+  failedLoginCount   Int       @default(0)
+  lockedUntil        DateTime? @db.DateTime(3)
+  lastLoginAt        DateTime? @db.DateTime(3)
+  /// Last authenticated request (updated at most once a minute): "online now"
+  lastSeenAt         DateTime? @db.DateTime(3)
+  accessRoleId       Int?
+  /// Bumped to sign the user out everywhere (sessions carry the version they were issued with)
+  sessionVersion     Int       @default(0)
+  createdAt          DateTime  @default(now()) @db.DateTime(3)
+  updatedAt          DateTime  @updatedAt @db.DateTime(3)
+
+  accessRole      AccessRole?          @relation(fields: [accessRoleId], references: [id])
+  employee        Employee?
+  notifications   Notification[]
+  resetTokens     PasswordResetToken[]
+  auditLogs       AuditLog[]
+  approvals       AttendanceRequest[]  @relation("approver")
+  enteredRequests AttendanceRequest[]  @relation("enteredBy")
+  imports         ImportBatch[]
+  reviewedReports DailyReport[]        @relation("reportReviewer")
+  announcements   Announcement[]
+}
+
+model PasswordResetToken {
+  id        Int       @id @default(autoincrement())
+  userId    Int
+  tokenHash String    @unique @db.VarChar(64)
+  expiresAt DateTime  @db.DateTime(3)
+  usedAt    DateTime? @db.DateTime(3)
+  createdAt DateTime  @default(now()) @db.DateTime(3)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model Department {
+  id        Int        @id @default(autoincrement())
+  name      String     @unique @db.VarChar(100)
+  employees Employee[]
+}
+
+model Designation {
+  id          Int              @id @default(autoincrement())
+  name        String           @unique @db.VarChar(100)
+  employees   Employee[]
+  leaveQuotas LeaveQuotaRule[]
+}
+
+enum EmployeeStatus {
+  ACTIVE
+  ON_NOTICE
+  EXITED
+}
+
+model Employee {
+  id             Int            @id @default(autoincrement())
+  code           String         @unique @db.VarChar(20)
+  fullName       String         @db.VarChar(150)
+  phone          String?        @db.VarChar(20)
+  email          String?        @db.VarChar(191)
+  designationId  Int?
+  departmentId   Int?
+  joiningDate    DateTime       @db.Date
+  /// For the birthday wishes on the dashboard (optional)
+  dateOfBirth    DateTime?      @db.Date
+  exitDate       DateTime?      @db.Date
+  status         EmployeeStatus @default(ACTIVE)
+  photoPath      String?        @db.VarChar(255)
+  managerId      Int?
+  userId         Int?           @unique
+  /// Daily report: null = follow the sign-in role, true = always required, false = never.
+  reportRequired Boolean?
+  deletedAt      DateTime?      @db.DateTime(3)
+  createdAt      DateTime       @default(now()) @db.DateTime(3)
+  updatedAt      DateTime       @updatedAt @db.DateTime(3)
+
+  user         User?               @relation(fields: [userId], references: [id])
+  designation  Designation?        @relation(fields: [designationId], references: [id])
+  department   Department?         @relation(fields: [departmentId], references: [id])
+  manager      Employee?           @relation("reports", fields: [managerId], references: [id])
+  reports      Employee[]          @relation("reports")
+  shifts       ShiftAssignment[]
+  attendance   AttendanceRecord[]
+  requests     AttendanceRequest[]
+  balances     LeaveBalance[]
+  dailyReports DailyReport[]
+  leaveQuotas  LeaveQuotaRule[]
+
+  @@index([status])
+  @@index([deletedAt])
+}
+
+// ---------------------------------------------------------------------------
+// Shifts, weekly offs, holidays
+// ---------------------------------------------------------------------------
+
+model Shift {
+  id                   Int     @id @default(autoincrement())
+  name                 String  @unique @db.VarChar(100)
+  isDefault            Boolean @default(false)
+  /// Arriving after start + grace counts as late.
+  graceMinutes         Int     @default(15)
+  fullDayMinutes       Int     @default(480)
+  halfDayMinutes       Int     @default(240)
+  /// Leaving more than this many minutes before the shift end counts as early leaving.
+  earlyLeaveMinutes    Int     @default(15)
+  /// Time worked beyond shift end + this many minutes counts as overtime.
+  overtimeAfterMinutes Int     @default(30)
+
+  days        ShiftDay[]
+  assignments ShiftAssignment[]
+  offRules    WeeklyOffRule[]
+}
+
+/// Timing for one weekday (0 = Sunday … 6 = Saturday). A weekday without a row has no timing.
+model ShiftDay {
+  id             Int    @id @default(autoincrement())
+  shiftId        Int
+  weekday        Int    @db.TinyInt
+  startTime      String @db.Char(5) // "09:30"
+  endTime        String @db.Char(5) // "18:30"
+  /// Overrides the shift's full-day minutes for this weekday (e.g. a shorter Saturday).
+  fullDayMinutes Int?
+
+  shift Shift @relation(fields: [shiftId], references: [id], onDelete: Cascade)
+
+  @@unique([shiftId, weekday])
+}
+
+model ShiftAssignment {
+  id            Int       @id @default(autoincrement())
+  employeeId    Int
+  shiftId       Int
+  effectiveFrom DateTime  @db.Date
+  effectiveTo   DateTime? @db.Date
+
+  employee Employee @relation(fields: [employeeId], references: [id])
+  shift    Shift    @relation(fields: [shiftId], references: [id])
+
+  @@index([employeeId, effectiveFrom])
+}
+
+/// Weekly-off pattern in force from `effectiveFrom` (history is kept so old months stay correct).
+/// pattern: { "<weekday>": "ALL" | [nth occurrences] }, e.g. { "0": "ALL", "6": [2, 4] }.
+/// customOffDates / customWorkDates adjust single days (the "custom per month" Saturday policy).
+model WeeklyOffRule {
+  id              Int      @id @default(autoincrement())
+  shiftId         Int?
+  effectiveFrom   DateTime @db.Date
+  pattern         Json
+  customOffDates  Json?
+  customWorkDates Json?
+  label           String?  @db.VarChar(100)
+
+  shift Shift? @relation(fields: [shiftId], references: [id], onDelete: Cascade)
+
+  @@index([effectiveFrom])
+}
+
+enum HolidayType {
+  NATIONAL
+  STATE
+  COMPANY
+  OPTIONAL
+}
+
+model Holiday {
+  id         Int         @id @default(autoincrement())
+  date       DateTime    @unique @db.Date
+  name       String      @db.VarChar(150)
+  type       HolidayType @default(STATE)
+  /// One-off declared holiday (e.g. election day)
+  isDeclared Boolean     @default(false)
+}
+
+// ---------------------------------------------------------------------------
+// Attendance
+// ---------------------------------------------------------------------------
+
+enum AttendanceStatus {
+  PRESENT
+  LATE
+  HALF_DAY
+  ABSENT
+  LEAVE
+  WFH
+  ON_DUTY
+  PERMISSION
+  HOLIDAY
+  WEEKLY_OFF
+  MISSING_PUNCH_OUT
+  NOT_JOINED
+  EXITED
+}
+
+enum AttendanceSource {
+  WEB
+  IMPORT
+  MANUAL
+}
+
+model AttendanceRecord {
+  id                Int               @id @default(autoincrement())
+  employeeId        Int
+  date              DateTime          @db.Date
+  punchInAt         DateTime?         @db.DateTime(3)
+  punchOutAt        DateTime?         @db.DateTime(3)
+  punchInLat        Decimal?          @db.Decimal(9, 6)
+  punchInLng        Decimal?          @db.Decimal(9, 6)
+  punchInAccuracy   Int?
+  punchOutLat       Decimal?          @db.Decimal(9, 6)
+  punchOutLng       Decimal?          @db.Decimal(9, 6)
+  punchOutAccuracy  Int?
+  punchInSelfie     String?           @db.VarChar(255)
+  punchOutSelfie    String?           @db.VarChar(255)
+  workedMinutes     Int               @default(0)
+  lateMinutes       Int               @default(0)
+  earlyLeaveMinutes Int               @default(0)
+  overtimeMinutes   Int               @default(0)
+  /// Computed by computeDayStatus(); null while the day is still in progress with no punch.
+  status            AttendanceStatus?
+  /// Set by HR/admin edits; wins over the computed status.
+  statusOverride    AttendanceStatus?
+  flags             Json?
+  source            AttendanceSource  @default(WEB)
+  remarks           String?           @db.VarChar(500)
+  /// Set when the record was created by an Excel import (lets the import be undone)
+  importBatchId     Int?
+  createdAt         DateTime          @default(now()) @db.DateTime(3)
+  updatedAt         DateTime          @updatedAt @db.DateTime(3)
+
+  employee    Employee     @relation(fields: [employeeId], references: [id])
+  importBatch ImportBatch? @relation(fields: [importBatchId], references: [id])
+
+  @@unique([employeeId, date])
+  @@index([date, status])
+  @@index([status])
+  @@index([importBatchId])
+}
+
+enum RequestType {
+  LEAVE
+  WFH
+  PERMISSION
+  ON_DUTY
+  REGULARIZATION
+}
+
+enum RequestStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  CANCELLED
+  CANCEL_REQUESTED
+}
+
+enum HalfDaySession {
+  FIRST
+  SECOND
+}
+
+model AttendanceRequest {
+  id              Int             @id @default(autoincrement())
+  employeeId      Int
+  type            RequestType
+  status          RequestStatus   @default(PENDING)
+  leaveTypeId     Int?
+  fromDate        DateTime        @db.Date
+  toDate          DateTime        @db.Date
+  halfDay         HalfDaySession?
+  /// "HH:mm" IST, for permission / on-duty time ranges and regularization punches
+  startTime       String?         @db.Char(5)
+  endTime         String?         @db.Char(5)
+  /// Days counted against the leave balance (0.5 for a half day)
+  days            Decimal?        @db.Decimal(5, 1)
+  reason          String          @db.VarChar(1000)
+  attachmentPath  String?         @db.VarChar(255)
+  approverId      Int?
+  decidedAt       DateTime?       @db.DateTime(3)
+  decisionComment String?         @db.VarChar(500)
+  /// Set when HR / a manager entered the request for the employee (it is approved on entry)
+  enteredById     Int?
+  createdAt       DateTime        @default(now()) @db.DateTime(3)
+  updatedAt       DateTime        @updatedAt @db.DateTime(3)
+
+  employee  Employee   @relation(fields: [employeeId], references: [id])
+  leaveType LeaveType? @relation(fields: [leaveTypeId], references: [id])
+  approver  User?      @relation("approver", fields: [approverId], references: [id])
+  enteredBy User?      @relation("enteredBy", fields: [enteredById], references: [id])
+
+  @@index([employeeId, fromDate])
+  @@index([status, type])
+}
+
+model LeaveType {
+  id              Int     @id @default(autoincrement())
+  code            String  @unique @db.VarChar(10)
+  name            String  @db.VarChar(50)
+  yearlyQuota     Decimal @default(0) @db.Decimal(5, 1)
+  isPaid          Boolean @default(true)
+  carryForward    Boolean @default(false)
+  maxCarryForward Decimal @default(0) @db.Decimal(5, 1)
+  isActive        Boolean @default(true)
+
+  balances LeaveBalance[]
+  requests AttendanceRequest[]
+  quotas   LeaveQuotaRule[]
+}
+
+/// A custom yearly quota for one leave type, for everyone with a designation or for one employee.
+/// Precedence: employee rule > designation rule > the leave type's yearly quota.
+model LeaveQuotaRule {
+  id            Int      @id @default(autoincrement())
+  leaveTypeId   Int
+  /// Exactly one of designationId / employeeId is set.
+  designationId Int?
+  employeeId    Int?
+  yearlyQuota   Decimal  @db.Decimal(5, 1)
+  createdAt     DateTime @default(now()) @db.DateTime(3)
+  updatedAt     DateTime @updatedAt @db.DateTime(3)
+
+  leaveType   LeaveType    @relation(fields: [leaveTypeId], references: [id], onDelete: Cascade)
+  designation Designation? @relation(fields: [designationId], references: [id], onDelete: Cascade)
+  employee    Employee?    @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+
+  @@unique([leaveTypeId, designationId, employeeId])
+  @@index([designationId])
+  @@index([employeeId])
+}
+
+model LeaveBalance {
+  id             Int     @id @default(autoincrement())
+  employeeId     Int
+  leaveTypeId    Int
+  year           Int
+  allotted       Decimal @default(0) @db.Decimal(5, 1)
+  carriedForward Decimal @default(0) @db.Decimal(5, 1)
+  used           Decimal @default(0) @db.Decimal(5, 1)
+
+  employee  Employee  @relation(fields: [employeeId], references: [id])
+  leaveType LeaveType @relation(fields: [leaveTypeId], references: [id])
+
+  @@unique([employeeId, leaveTypeId, year])
+}
+
+// ---------------------------------------------------------------------------
+// Excel import
+// ---------------------------------------------------------------------------
+
+enum ImportStatus {
+  PREVIEW
+  DONE
+  UNDONE
+  FAILED
+}
+
+/// One uploaded workbook. "preview" holds the parsed sheets until the import is confirmed.
+model ImportBatch {
+  id          Int          @id @default(autoincrement())
+  fileName    String       @db.VarChar(255)
+  filePath    String       @db.VarChar(255)
+  status      ImportStatus @default(PREVIEW)
+  preview     Json
+  /// Options chosen on confirm and what was created (employee and holiday ids), for undo
+  result      Json?
+  error       String?      @db.VarChar(1000)
+  createdById Int
+  createdAt   DateTime     @default(now()) @db.DateTime(3)
+  committedAt DateTime?    @db.DateTime(3)
+  undoneAt    DateTime?    @db.DateTime(3)
+
+  createdBy User               @relation(fields: [createdById], references: [id])
+  records   AttendanceRecord[]
+  changes   ImportChange[]
+}
+
+/// The previous state of a record the import overwrote, so undo can put it back.
+model ImportChange {
+  id       Int  @id @default(autoincrement())
+  batchId  Int
+  recordId Int
+  before   Json
+
+  batch ImportBatch @relation(fields: [batchId], references: [id], onDelete: Cascade)
+
+  @@index([batchId])
+}
+
+// ---------------------------------------------------------------------------
+// Daily work reports & announcements
+// ---------------------------------------------------------------------------
+
+/// An employee's end-of-day update: what they worked on, tomorrow's plan, anything blocking them.
+model DailyReport {
+  id            Int       @id @default(autoincrement())
+  employeeId    Int
+  /// IST business date the report is for
+  date          DateTime  @db.Date
+  /// [{ title: string, hours: number | null, status: "DONE" | "IN_PROGRESS" | "BLOCKED" }]
+  tasks         Json
+  summary       String    @default("") @db.VarChar(2000)
+  tomorrowPlan  String    @default("") @db.VarChar(1000)
+  blockers      String    @default("") @db.VarChar(1000)
+  submittedAt   DateTime  @default(now()) @db.DateTime(3)
+  updatedAt     DateTime  @updatedAt @db.DateTime(3)
+  reviewedById  Int?
+  reviewedAt    DateTime? @db.DateTime(3)
+  reviewComment String?   @db.VarChar(500)
+
+  employee   Employee @relation(fields: [employeeId], references: [id])
+  reviewedBy User?    @relation("reportReviewer", fields: [reviewedById], references: [id])
+
+  @@unique([employeeId, date])
+  @@index([date])
+}
+
+/// Company notice shown on everyone's dashboard until it expires.
+model Announcement {
+  id          Int       @id @default(autoincrement())
+  title       String    @db.VarChar(150)
+  body        String    @db.VarChar(2000)
+  pinned      Boolean   @default(false)
+  /// Last IST day it is shown (null = until removed)
+  expiresOn   DateTime? @db.Date
+  createdById Int
+  createdAt   DateTime  @default(now()) @db.DateTime(3)
+  updatedAt   DateTime  @updatedAt @db.DateTime(3)
+
+  createdBy User @relation(fields: [createdById], references: [id])
+
+  @@index([createdAt])
+}
+
+// ---------------------------------------------------------------------------
+// System
+// ---------------------------------------------------------------------------
+
+model Notification {
+  id         Int       @id @default(autoincrement())
+  userId     Int
+  title      String    @db.VarChar(200)
+  body       String    @db.VarChar(1000)
+  link       String?   @db.VarChar(255)
+  readAt     DateTime? @db.DateTime(3)
+  /// Reminders also open as a pop-up until opened or dismissed (they stay in the bell either way)
+  popup      Boolean   @default(false)
+  /// "Remind me later": the pop-up waits until this time
+  popupAfter DateTime? @db.DateTime(3)
+  createdAt  DateTime  @default(now()) @db.DateTime(3)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, readAt])
+  @@index([userId, popup])
+}
+
+model AuditLog {
+  id        Int      @id @default(autoincrement())
+  actorId   Int?
+  action    String   @db.VarChar(50)
+  entity    String   @db.VarChar(50)
+  entityId  String?  @db.VarChar(50)
+  before    Json?
+  after     Json?
+  reason    String?  @db.VarChar(500)
+  ip        String?  @db.VarChar(45)
+  createdAt DateTime @default(now()) @db.DateTime(3)
+
+  actor User? @relation(fields: [actorId], references: [id])
+
+  @@index([entity, entityId])
+  @@index([createdAt])
+}
+
+/// Typed key/value settings; see lib/settings.ts for keys, defaults and validation.
+model CompanySetting {
+  key       String   @id @db.VarChar(100)
+  value     Json
+  updatedAt DateTime @updatedAt @db.DateTime(3)
+}

@@ -1,0 +1,398 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Attendance Time Strip</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wdth,wght@75..100,400..700&display=swap" rel="stylesheet" />
+<style>
+:root {
+  --paper: #ffffff; --wash: #f4f5f7; --line: #e3e5ea; --line-2: #cfd3da;
+  --ink: #16181d; --ink-2: #4b505b; --ink-3: #6b7180;
+  --on-ink: #ffffff; --ink-soft: #2a2d35;
+  --present: #1f9d55; --present-t: #e2f5ea;
+  --late: #d48a00; --late-t: #fdf1d6;
+  --leave: #0f8b8d; --leave-t: #dcf3f2;
+  --absent: #d93a3a; --absent-t: #fde6e6;
+  --wfh: #6b5bd6; --wfh-t: #ecebfc;
+  --shift: #eceef2;
+  --frame: #0d0e11;
+  --deep: #16181d; --on-deep: #ffffff;
+}
+:root[data-theme="dark"] {
+  --paper: #121419; --wash: #0b0c10; --line: #23262e; --line-2: #343843;
+  --ink: #f1f2f5; --ink-2: #b9bdc8; --ink-3: #8b909e;
+  --on-ink: #121419; --ink-soft: #d9dbe2;
+  --present: #3cc97a; --present-t: #10301f;
+  --late: #f2b230; --late-t: #34270b;
+  --leave: #34c3c2; --leave-t: #0e2e2e;
+  --absent: #f26464; --absent-t: #3a1617;
+  --wfh: #a497ff; --wfh-t: #23204a;
+  --shift: #1d2028;
+  --frame: #000;
+  --deep: #1c1f27; --on-deep: #ffffff;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: "Instrument Sans", system-ui, sans-serif; background: var(--wash); color: var(--ink); -webkit-font-smoothing: antialiased; font-size: 14px; }
+.n { font-variant-numeric: tabular-nums; }
+.cond { font-stretch: 75%; font-variation-settings: "wdth" 75; }
+button { font: inherit; color: inherit; background: none; border: 0; cursor: pointer; }
+button:focus-visible, a:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+.dot { display: inline-block; width: 8px; height: 8px; border-radius: 2px; flex: none; }
+
+.page { max-width: 1360px; margin: 0 auto; padding: 28px 24px 72px; }
+.intro { display: flex; justify-content: space-between; align-items: flex-end; gap: 16px; flex-wrap: wrap; margin-bottom: 28px; }
+.intro h1 { font-size: 30px; font-weight: 650; letter-spacing: -0.02em; }
+.intro p { color: var(--ink-2); margin-top: 6px; max-width: 64ch; line-height: 1.5; }
+.seg { display: inline-flex; border: 1px solid var(--line-2); border-radius: 10px; padding: 3px; background: var(--paper); }
+.seg button { padding: 7px 14px; border-radius: 7px; font-weight: 600; color: var(--ink-2); }
+.seg button[aria-pressed="true"] { background: var(--ink); color: var(--on-ink); }
+
+.stage { display: grid; grid-template-columns: 340px 1fr; gap: 40px; align-items: center; margin-bottom: 36px; }
+
+/* ---------------- phone ---------------- */
+.phone { width: 340px; border-radius: 48px; background: var(--frame); padding: 10px; }
+.scr { border-radius: 39px; overflow: hidden; background: var(--paper); height: 720px; display: flex; flex-direction: column; position: relative; }
+.island { position: absolute; top: 10px; left: 50%; transform: translateX(-50%); width: 96px; height: 27px; background: #000; border-radius: 20px; z-index: 2; }
+.sb { display: flex; justify-content: space-between; padding: 14px 26px 0; font-size: 12px; font-weight: 600; }
+.pbody { flex: 1; overflow: hidden; padding: 14px 18px 0; }
+.ptop { display: flex; justify-content: space-between; align-items: center; }
+.ptop small { color: var(--ink-3); font-weight: 500; }
+.av { width: 32px; height: 32px; border-radius: 50%; display: grid; place-items: center; font-size: 12px; font-weight: 650; background: var(--wash); border: 1px solid var(--line); color: var(--ink-2); flex: none; }
+.hello { font-size: 21px; font-weight: 600; letter-spacing: -0.015em; margin-top: 10px; }
+
+.hero { margin-top: 14px; background: var(--deep); color: var(--on-deep); border-radius: 26px; padding: 18px 18px 16px; }
+.hero .state { display: flex; justify-content: space-between; align-items: center; font-size: 12.5px; font-weight: 550; opacity: .85; }
+.hero .state span:first-child { display: inline-flex; align-items: center; gap: 7px; }
+.live { width: 7px; height: 7px; border-radius: 50%; background: var(--present); box-shadow: 0 0 0 3px color-mix(in srgb, var(--present) 30%, transparent); }
+.timer { font-size: 92px; line-height: .9; font-weight: 700; letter-spacing: -0.035em; margin-top: 10px; display: flex; align-items: baseline; gap: 6px; }
+.timer small { font-size: 15px; font-weight: 550; letter-spacing: 0; opacity: .7; font-stretch: 100%; font-variation-settings: "wdth" 100; }
+.of { font-size: 13px; opacity: .7; margin-top: 6px; }
+/* the day strip on dark */
+.strip { position: relative; margin-top: 18px; }
+.track { position: relative; height: 26px; border-radius: 7px; background: color-mix(in srgb, var(--on-deep) 12%, transparent); overflow: hidden; }
+.track .win { position: absolute; top: 0; bottom: 0; background: color-mix(in srgb, var(--on-deep) 10%, transparent); border-left: 1px dashed color-mix(in srgb, var(--on-deep) 40%, transparent); border-right: 1px dashed color-mix(in srgb, var(--on-deep) 40%, transparent); }
+.track .fill { position: absolute; top: 5px; bottom: 5px; border-radius: 4px; background: var(--present); }
+.track .now { position: absolute; top: -2px; bottom: -2px; width: 2px; background: var(--on-deep); }
+.ticks { display: flex; justify-content: space-between; font-size: 10.5px; opacity: .6; margin-top: 6px; }
+.punch { margin-top: 16px; width: 100%; height: 56px; border-radius: 16px; background: var(--on-deep); color: var(--deep); font-size: 16px; font-weight: 650; display: flex; align-items: center; justify-content: center; gap: 10px; position: relative; overflow: hidden; }
+.punch .hold { position: absolute; right: 16px; font-size: 11.5px; font-weight: 550; color: var(--ink-3); }
+
+.psec { margin-top: 18px; }
+.psec h3 { font-size: 14px; font-weight: 650; display: flex; justify-content: space-between; align-items: baseline; }
+.psec h3 a { font-size: 12.5px; font-weight: 550; color: var(--ink-2); text-decoration: none; }
+.week { display: grid; grid-template-columns: repeat(7, 1fr); gap: 5px; margin-top: 10px; text-align: center; }
+.week div { font-size: 11px; color: var(--ink-3); font-weight: 550; }
+.week b { display: grid; place-items: center; height: 34px; border-radius: 9px; margin-top: 4px; font-size: 12px; font-weight: 650; }
+.rows { margin-top: 6px; }
+.row { display: flex; align-items: center; gap: 12px; padding: 11px 0; border-bottom: 1px solid var(--line); }
+.row:last-child { border-bottom: 0; }
+.row .ic { width: 34px; height: 34px; border-radius: 10px; display: grid; place-items: center; background: var(--wash); color: var(--ink-2); flex: none; }
+.row div { flex: 1; }
+.row b { display: block; font-size: 14px; font-weight: 600; }
+.row small { color: var(--ink-3); font-size: 12px; }
+.row svg.chev { color: var(--ink-3); }
+.tabs { display: grid; grid-template-columns: repeat(5, 1fr); border-top: 1px solid var(--line); padding: 8px 6px 22px; background: var(--paper); }
+.tabs span { display: flex; flex-direction: column; align-items: center; gap: 3px; font-size: 10.5px; font-weight: 600; color: var(--ink-3); position: relative; }
+.tabs .on { color: var(--ink); }
+.tabs .on::before { content: ""; position: absolute; top: -9px; width: 22px; height: 2px; border-radius: 2px; background: var(--ink); }
+
+/* ---------------- desktop ---------------- */
+.desk { grid-column: 1 / -1; background: var(--paper); border: 1px solid var(--line); border-radius: 18px; overflow: hidden; display: grid; grid-template-columns: 216px 1fr; min-height: 720px; }
+.side { background: var(--deep); color: var(--on-deep); padding: 18px 12px; display: flex; flex-direction: column; gap: 2px; }
+.org { display: flex; align-items: center; gap: 10px; padding: 4px 8px 18px; }
+.mark { width: 30px; height: 30px; border-radius: 9px; background: var(--on-deep); color: var(--deep); display: grid; place-items: center; }
+.org b { font-size: 13.5px; font-weight: 650; display: block; }
+.org small { font-size: 11.5px; opacity: .6; }
+.nav { display: flex; align-items: center; gap: 10px; padding: 8px 10px; border-radius: 9px; font-size: 13.5px; font-weight: 500; opacity: .72; }
+.nav.on { background: color-mix(in srgb, var(--on-deep) 12%, transparent); opacity: 1; font-weight: 600; }
+.nav em { margin-left: auto; font-style: normal; font-size: 11px; font-weight: 700; background: var(--on-deep); color: var(--deep); border-radius: 6px; padding: 1px 6px; }
+.gap { height: 14px; }
+.side .clock { margin-top: auto; font-size: 12px; opacity: .65; padding: 0 10px; }
+
+.main { padding: 24px 28px 28px; min-width: 0; }
+.mhead { display: flex; justify-content: space-between; align-items: flex-end; gap: 16px; }
+.mhead small { color: var(--ink-3); font-weight: 550; }
+.mhead h2 { font-size: 26px; font-weight: 650; letter-spacing: -0.02em; margin-top: 2px; }
+.search { width: 240px; height: 36px; border: 1px solid var(--line-2); border-radius: 10px; display: flex; align-items: center; gap: 8px; padding: 0 12px; color: var(--ink-3); font-size: 13px; }
+.search kbd { margin-left: auto; font: inherit; font-size: 11px; border: 1px solid var(--line-2); border-radius: 5px; padding: 0 5px; }
+
+.tally { display: flex; margin-top: 22px; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
+.tally div { flex: 1; padding: 14px 18px 14px 0; }
+.tally div + div { padding-left: 18px; border-left: 1px solid var(--line); }
+.tally b { display: block; font-size: 52px; line-height: 1; font-weight: 700; letter-spacing: -0.03em; }
+.tally b small { font-size: 18px; color: var(--ink-3); font-weight: 600; letter-spacing: 0; }
+.tally span { display: flex; align-items: center; gap: 7px; margin-top: 6px; color: var(--ink-2); font-weight: 550; font-size: 13px; }
+
+.cols { display: grid; grid-template-columns: minmax(0, 1fr) 320px; gap: 28px; margin-top: 24px; }
+.sechead { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 10px; }
+.sechead h3 { font-size: 15px; font-weight: 650; }
+.sechead small { color: var(--ink-3); font-size: 12.5px; }
+.sechead a { color: var(--ink-2); font-weight: 600; font-size: 12.5px; text-decoration: none; }
+
+/* team time strip */
+.tl { --name: 168px; }
+.tl .axis, .tl .r { display: grid; grid-template-columns: var(--name) 1fr 64px; align-items: center; gap: 12px; }
+.tl .axis { font-size: 11px; color: var(--ink-3); font-weight: 550; padding-bottom: 6px; }
+.tl .axis .hrs { position: relative; height: 14px; }
+.tl .axis .hrs span { position: absolute; transform: translateX(-50%); white-space: nowrap; }
+.tl .axis .hrs span:first-child { transform: none; }
+.tl .axis .hrs span:last-child { transform: translateX(-100%); }
+.tl .r { padding: 7px 0; border-top: 1px solid var(--line); }
+.tl .who { display: flex; align-items: center; gap: 9px; min-width: 0; }
+.tl .who b { font-size: 13px; font-weight: 600; display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.tl .who small { font-size: 11.5px; color: var(--ink-3); }
+.tl .lane { position: relative; height: 22px; border-radius: 6px; }
+.tl .lane .win { position: absolute; top: 0; bottom: 0; background: var(--shift); border-radius: 6px; }
+.tl .lane .bar { position: absolute; top: 4px; bottom: 4px; border-radius: 4px; }
+.tl .lane .lateseg { position: absolute; top: 4px; bottom: 4px; border-radius: 4px 0 0 4px; background: repeating-linear-gradient(-45deg, var(--late) 0 3px, transparent 3px 6px); opacity: .55; }
+.tl .lane .note { position: absolute; top: 50%; transform: translateY(-50%); font-size: 11.5px; font-weight: 600; white-space: nowrap; }
+.tl .lane .leavebar { position: absolute; top: 4px; bottom: 4px; border-radius: 4px; background: repeating-linear-gradient(-45deg, var(--leave-t) 0 5px, color-mix(in srgb, var(--leave) 25%, var(--leave-t)) 5px 10px); }
+.tl .nowline { position: absolute; top: -4px; bottom: -4px; width: 2px; background: var(--ink); z-index: 1; }
+.tl .t { text-align: right; font-size: 12.5px; color: var(--ink-2); font-weight: 550; }
+.tl .t.late { color: var(--late); font-weight: 650; }
+.tl .lanes { position: relative; }
+.legend { display: flex; gap: 14px; flex-wrap: wrap; margin-top: 12px; font-size: 12px; color: var(--ink-2); font-weight: 550; }
+.legend span { display: inline-flex; align-items: center; gap: 6px; }
+
+.wait .item { padding: 12px 0; border-top: 1px solid var(--line); }
+.wait .item:first-of-type { border-top: 0; padding-top: 2px; }
+.wait .top { display: flex; align-items: center; gap: 10px; }
+.wait .top b { font-size: 13.5px; font-weight: 600; }
+.wait .top small { display: block; color: var(--ink-3); font-size: 12px; }
+.tag { margin-left: auto; font-size: 11.5px; font-weight: 650; padding: 2px 8px; border-radius: 6px; }
+.wait p { font-size: 13px; color: var(--ink-2); margin: 8px 0 10px 42px; }
+.acts { display: flex; gap: 8px; margin-left: 42px; }
+.btn { height: 32px; padding: 0 14px; border-radius: 9px; font-weight: 600; font-size: 13px; }
+.btn.ink { background: var(--ink); color: var(--on-ink); }
+.btn.line { border: 1px solid var(--line-2); color: var(--ink-2); }
+.side-note { margin-top: 22px; padding-top: 16px; border-top: 1px solid var(--line); font-size: 13px; color: var(--ink-2); line-height: 1.5; }
+.side-note b { color: var(--ink); }
+
+.why { display: grid; gap: 26px; max-width: 520px; }
+.why div { border-left: 2px solid var(--ink); padding-left: 16px; }
+.why b { font-size: 17px !important; font-weight: 650; }
+.why b { font-size: 14px; }
+.why p { color: var(--ink-2); margin-top: 6px; line-height: 1.55; }
+
+@media (max-width: 1180px) { .stage { grid-template-columns: 1fr; } .phone { position: static; margin: 0 auto; } }
+@media (max-width: 900px) { .desk { grid-template-columns: 1fr; } .side { display: none; } .cols { grid-template-columns: 1fr; } .tally { flex-wrap: wrap; } .tally div { flex-basis: 50%; } .why { grid-template-columns: 1fr; } .search { display: none; } .tl { --name: 110px; } }
+@media (max-width: 420px) { .page { padding: 20px 16px 56px; } .phone { width: 100%; max-width: 340px; } }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <symbol id="clock" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></symbol>
+    <symbol id="out" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"/></symbol>
+    <symbol id="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="m9 18 6-6-6-6"/></symbol>
+    <symbol id="palm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 8c0-2.76-2.46-5-5.5-5S2 5.24 2 8h2l1-1 1 1h4M13 7.14A5.82 5.82 0 0 1 16.5 6c3.04 0 5.5 2.24 5.5 5h-3l-1-1-1 1h-3M5.89 9.71c-2.15 2.15-2.3 5.47-.35 7.43l4.24-4.25.7-.7.71-.71 2.12-2.12c-1.95-1.96-5.27-1.8-7.42.35M11 15.5c.5 2.5-.17 4.5-1 6.5h4c2-5.5-.5-12-1-14"/></symbol>
+    <symbol id="timer" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M10 2h4M12 14l3-3"/><circle cx="12" cy="14" r="8"/></symbol>
+    <symbol id="house" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 10 9-7 9 7v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></symbol>
+    <symbol id="note" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M8 13h8M8 17h5"/></symbol>
+    <symbol id="cal" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="4" width="18" height="18" rx="3"/><path d="M16 2v4M8 2v4M3 10h18"/></symbol>
+    <symbol id="inbox" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-6l-2 3h-4l-2-3H2"/><path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/></symbol>
+    <symbol id="menu" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></symbol>
+    <symbol id="grid" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></symbol>
+    <symbol id="users" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></symbol>
+    <symbol id="chart" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 3v18h18M7 15v2M12 10v7M17 6v11"/></symbol>
+    <symbol id="search" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></symbol>
+  </defs>
+</svg>
+
+<div class="page">
+  <div class="intro">
+    <div>
+      <h1>Attendance, drawn as the working day</h1>
+      <p>Concept v3. Ink-black controls on white; colour appears only where it says something about attendance. The day strip (shift window, punches, now line) is the one visual idea, reused on the phone and in HR's live register.</p>
+    </div>
+    <div class="seg" role="group" aria-label="Theme"><button data-t="light" aria-pressed="true">Light</button><button data-t="dark" aria-pressed="false">Dark</button></div>
+  </div>
+
+  <div class="stage">
+    <!-- PHONE: employee home -->
+    <div class="phone"><div class="scr">
+      <div class="island"></div>
+      <div class="sb"><span class="n">12:21</span><span>5G ▮</span></div>
+      <div class="pbody">
+        <div class="ptop"><small class="n">Thursday, 12 Nov</small><span class="av">PK</span></div>
+        <p class="hello">Good afternoon, Praveen</p>
+
+        <section class="hero" aria-label="Today">
+          <div class="state"><span><i class="live"></i>On shift since 09:41 AM</span><span class="n">9:30 – 6:30</span></div>
+          <div class="timer cond n" aria-label="2 hours 40 minutes worked"><span id="tm">2:40</span><small>hrs</small></div>
+          <p class="of n" id="left">6h 20m to go · out at 6:41 PM</p>
+          <div class="strip">
+            <div class="track">
+              <div class="win" style="left:12.5%;width:56.25%"></div>
+              <div class="fill" id="fill" style="left:14.1%;width:16.6%"></div>
+              <div class="now" id="now" style="left:30.7%"></div>
+            </div>
+            <div class="ticks n"><span>8</span><span>10</span><span>12</span><span>2</span><span>4</span><span>6</span><span>8 PM</span></div>
+          </div>
+          <button class="punch"><svg width="18" height="18"><use href="#out"/></svg>Punch out<span class="hold">Hold</span></button>
+        </section>
+
+        <section class="psec">
+          <h3>This week <a href="#">Calendar</a></h3>
+          <div class="week n">
+            <div>Mon<b style="background:var(--present-t);color:var(--present)">9</b></div>
+            <div>Tue<b style="background:var(--late-t);color:var(--late)">10</b></div>
+            <div>Wed<b style="background:var(--present-t);color:var(--present)">11</b></div>
+            <div>Thu<b style="background:var(--ink);color:var(--on-ink)">12</b></div>
+            <div>Fri<b style="background:var(--wash);color:var(--ink-3)">13</b></div>
+            <div>Sat<b style="background:var(--wash);color:var(--ink-3)">14</b></div>
+            <div>Sun<b style="color:var(--ink-3)">15</b></div>
+          </div>
+        </section>
+
+        <section class="psec">
+          <h3>Ask for</h3>
+          <div class="rows">
+            <div class="row"><span class="ic"><svg width="17" height="17"><use href="#palm"/></svg></span><div><b>Leave</b><small class="n">12 casual days left</small></div><svg class="chev" width="16" height="16"><use href="#chev"/></svg></div>
+            <div class="row"><span class="ic"><svg width="17" height="17"><use href="#timer"/></svg></span><div><b>Permission</b><small>A few hours away</small></div><svg class="chev" width="16" height="16"><use href="#chev"/></svg></div>
+            <div class="row"><span class="ic"><svg width="17" height="17"><use href="#house"/></svg></span><div><b>Work from home</b><small>For one or more days</small></div><svg class="chev" width="16" height="16"><use href="#chev"/></svg></div>
+          </div>
+        </section>
+      </div>
+      <nav class="tabs">
+        <span class="on"><svg width="20" height="20"><use href="#clock"/></svg>Today</span>
+        <span><svg width="20" height="20"><use href="#cal"/></svg>Calendar</span>
+        <span><svg width="20" height="20"><use href="#inbox"/></svg>Requests</span>
+        <span><svg width="20" height="20"><use href="#note"/></svg>Report</span>
+        <span><svg width="20" height="20"><use href="#menu"/></svg>More</span>
+      </nav>
+    </div></div>
+
+  <div class="why">
+    <div><b>One idea, used everywhere</b><p>The shift is a grey window, the bar is when someone was actually in, the black line is now. Staff see their own day on the phone; HR sees everyone's stacked as a live register.</p></div>
+    <div><b>Colour only means attendance</b><p>Green present, amber late (the hatched part is the late minutes), teal leave, violet work from home, red not in. Buttons and menus stay black and white, so the colours stand out.</p></div>
+    <div><b>Numbers as the headline</b><p>Timer and totals use the condensed width of Instrument Sans, so they read from across the room. Everything else is plain sentences: "Came in late", "Waiting for you".</p></div>
+    </div>
+
+    <!-- DESKTOP: HR -->
+    <div class="desk">
+      <aside class="side">
+        <div class="org"><span class="mark"><svg width="17" height="17"><use href="#clock"/></svg></span><div><b>Demo Studio</b><small>HR Manager</small></div></div>
+        <span class="nav on"><svg width="17" height="17"><use href="#clock"/></svg>Today</span>
+        <span class="nav"><svg width="17" height="17"><use href="#grid"/></svg>Muster roll</span>
+        <span class="nav"><svg width="17" height="17"><use href="#inbox"/></svg>Requests<em>3</em></span>
+        <span class="nav"><svg width="17" height="17"><use href="#note"/></svg>Daily reports</span>
+        <div class="gap"></div>
+        <span class="nav"><svg width="17" height="17"><use href="#users"/></svg>Employees</span>
+        <span class="nav"><svg width="17" height="17"><use href="#cal"/></svg>Holidays</span>
+        <span class="nav"><svg width="17" height="17"><use href="#chart"/></svg>Reports</span>
+        <span class="clock n">IST 12:21 PM</span>
+      </aside>
+
+      <main class="main">
+        <div class="mhead">
+          <div><small class="n">Thursday, 12 November 2026</small><h2>Who's in today</h2></div>
+          <div class="search"><svg width="14" height="14"><use href="#search"/></svg>Find a person<kbd>/</kbd></div>
+        </div>
+
+        <div class="tally n">
+          <div><b class="cond">42<small>/50</small></b><span><i class="dot" style="background:var(--present)"></i>In the office</span></div>
+          <div><b class="cond" style="color:var(--late)">5</b><span><i class="dot" style="background:var(--late)"></i>Came in late</span></div>
+          <div><b class="cond" style="color:var(--leave)">2</b><span><i class="dot" style="background:var(--leave)"></i>On leave</span></div>
+          <div><b class="cond" style="color:var(--absent)">1</b><span><i class="dot" style="background:var(--absent)"></i>Not in yet</span></div>
+        </div>
+
+        <div class="cols">
+          <section>
+            <div class="sechead"><h3>Live register</h3><a href="#">Open muster roll</a></div>
+            <div class="tl" id="tl">
+              <div class="axis n"><span></span><span class="hrs"><span style="left:0">8 AM</span><span style="left:16.67%">10</span><span style="left:33.33%">12</span><span style="left:50%">2 PM</span><span style="left:66.67%">4</span><span style="left:83.33%">6</span><span style="left:100%">8 PM</span></span><span style="text-align:right">In</span></div>
+              <div class="lanes" id="lanes"></div>
+            </div>
+            <div class="legend">
+              <span><i class="dot" style="background:var(--shift);outline:1px solid var(--line-2)"></i>Shift 9:30 – 6:30</span>
+              <span><i class="dot" style="background:var(--present)"></i>Present</span>
+              <span><i class="dot" style="background:var(--late)"></i>Late arrival</span>
+              <span><i class="dot" style="background:var(--wfh)"></i>Work from home</span>
+              <span><i class="dot" style="background:var(--leave)"></i>Leave / permission</span>
+              <span><i class="dot" style="background:var(--ink)"></i>Now</span>
+            </div>
+          </section>
+
+          <section class="wait">
+            <div class="sechead"><h3>Waiting for you</h3><small class="n">3 requests</small></div>
+            <div class="item">
+              <div class="top"><span class="av">KS</span><div><b>Karthik Selvam</b><small>Creative · 2 hours ago</small></div><span class="tag" style="background:var(--leave-t);color:var(--leave)">Leave</span></div>
+              <p class="n">Casual leave, 18 – 20 Nov (3 days). No one else from Creative is away.</p>
+              <div class="acts"><button class="btn ink">Approve</button><button class="btn line">Decline</button></div>
+            </div>
+            <div class="item">
+              <div class="top"><span class="av">DS</span><div><b>Divya Sundar</b><small>Operations · 40 min ago</small></div><span class="tag" style="background:var(--late-t);color:var(--late)">Permission</span></div>
+              <p class="n">Today 4:00 – 6:00 PM, bank work.</p>
+              <div class="acts"><button class="btn ink">Approve</button><button class="btn line">Decline</button></div>
+            </div>
+            <div class="item">
+              <div class="top"><span class="av">MK</span><div><b>Meena Krishnan</b><small>Accounts · yesterday</small></div><span class="tag" style="background:var(--wfh-t);color:var(--wfh)">Work from home</span></div>
+              <p class="n">Friday 13 Nov.</p>
+              <div class="acts"><button class="btn ink">Approve</button><button class="btn line">Decline</button></div>
+            </div>
+            <p class="side-note"><b>Meena Krishnan</b> has a birthday tomorrow, and <b>Divya Sundar</b> completes 1 year on Monday.</p>
+          </section>
+        </div>
+      </main>
+    </div>
+
+</div>
+</div>
+
+<script>
+const root = document.documentElement;
+document.querySelectorAll(".seg button").forEach((b) => b.addEventListener("click", () => {
+  root.dataset.theme = b.dataset.t;
+  document.querySelectorAll(".seg button").forEach((x) => x.setAttribute("aria-pressed", String(x === b)));
+}));
+if (new URLSearchParams(location.search).get("theme") === "dark") document.querySelector('.seg button[data-t="dark"]').click();
+
+// Axis: 8 AM (480) to 8 PM (1200)
+const S = 480, E = 1200, pct = (m) => ((m - S) / (E - S)) * 100;
+const NOW = 12 * 60 + 21, SH0 = 9 * 60 + 30, SH1 = 18 * 60 + 30, GRACE = 15;
+const t = (h, m) => h * 60 + m;
+const fmt = (m) => { const h = Math.floor(m / 60), mm = String(m % 60).padStart(2, "0"); return `${(h % 12) || 12}:${mm}`; };
+const people = [
+  { n: "Anitha Raman", d: "Operations", in: t(9, 18) },
+  { n: "Praveen Kumar", d: "Creative", in: t(9, 41) },
+  { n: "Karthik Selvam", d: "Creative", in: t(10, 2) },
+  { n: "Lakshmi Narayanan", d: "Human Resources", in: t(9, 5) },
+  { n: "Meena Krishnan", d: "Accounts", in: t(9, 26), wfh: true },
+  { n: "Divya Sundar", d: "Operations", in: t(9, 12), perm: [t(16, 0), t(18, 0)] },
+  { n: "Ravi Chandran", d: "Support", leave: "Casual leave" },
+  { n: "Suresh Natarajan", d: "Support", absent: true },
+];
+const lanes = document.getElementById("lanes");
+lanes.innerHTML = people.map((p) => {
+  let inner = `<div class="win" style="left:${pct(SH0)}%;width:${pct(SH1) - pct(SH0)}%"></div>`;
+  let time = "–", tcls = "t";
+  if (p.leave) inner += `<div class="leavebar" style="left:${pct(SH0)}%;width:${pct(SH1) - pct(SH0)}%"></div><span class="note" style="left:${pct(SH0) + 2}%;color:var(--leave)">${p.leave}</span>`;
+  else if (p.absent) inner += `<span class="note" style="left:${pct(SH0) + 2}%;color:var(--absent)">Not punched in · reminder sent 9:45</span>`;
+  else {
+    const late = p.in > SH0 + GRACE;
+    const col = p.wfh ? "var(--wfh)" : late ? "var(--late)" : "var(--present)";
+    if (late) inner += `<div class="lateseg" style="left:${pct(SH0)}%;width:${pct(p.in) - pct(SH0)}%"></div>`;
+    inner += `<div class="bar" style="left:${pct(p.in)}%;width:${pct(NOW) - pct(p.in)}%;background:${col}"></div>`;
+    if (p.perm) inner += `<div class="leavebar" style="left:${pct(p.perm[0])}%;width:${pct(p.perm[1]) - pct(p.perm[0])}%"></div>`;
+    time = fmt(p.in); if (late) tcls += " late";
+  }
+  const ini = p.n.split(" ").map((x) => x[0]).join("");
+  return `<div class="r"><div class="who"><span class="av">${ini}</span><div style="min-width:0"><b>${p.n}</b><small>${p.d}</small></div></div><div class="lane">${inner}</div><div class="${tcls} n">${time}</div></div>`;
+}).join("");
+// one now line across all lanes
+const first = lanes.querySelector(".lane");
+const line = document.createElement("div");
+line.className = "nowline";
+lanes.appendChild(line);
+function placeNow() {
+  const a = first.getBoundingClientRect(), L = lanes.getBoundingClientRect();
+  line.style.left = (a.left - L.left + a.width * pct(NOW) / 100) + "px";
+}
+placeNow(); addEventListener("resize", placeNow);
+</script>
+</body>
+</html>

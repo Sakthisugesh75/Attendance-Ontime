@@ -1,0 +1,344 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Design Picker</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Schibsted+Grotesk:wght@400;500;600;700;800&family=Atkinson+Hyperlegible+Next:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+/* Picker chrome */
+:root{--ui-bg:#f4f4f2;--ui-card:#fff;--ui-fg:#1b1b1d;--ui-mute:#5f6068;--ui-line:#dedfda;--ui-sel:#1b1b1d}
+*{box-sizing:border-box}
+body{margin:0;background:var(--ui-bg);color:var(--ui-fg);font:15px/1.5 Inter,system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+.wrap{display:grid;grid-template-columns:380px minmax(0,1fr);min-height:100vh}
+aside{background:var(--ui-card);border-right:1px solid var(--ui-line);padding:24px 22px 120px;overflow:auto;height:100vh;position:sticky;top:0}
+aside h1{font-size:20px;margin:0 0 4px}
+aside .lead{color:var(--ui-mute);margin:0 0 20px;font-size:14px}
+.q{margin-bottom:22px}
+.q h2{font-size:15px;margin:0 0 2px}
+.q p{margin:0 0 10px;color:var(--ui-mute);font-size:13px}
+.opts{display:flex;flex-wrap:wrap;gap:8px}
+.opt{border:1.5px solid var(--ui-line);background:var(--ui-card);border-radius:12px;padding:10px 12px;cursor:pointer;font:500 13px Inter,sans-serif;color:var(--ui-fg);display:flex;align-items:center;gap:8px;text-align:left}
+.opt:hover{border-color:#9a9ba2}
+.opt[aria-pressed=true]{border-color:var(--ui-sel);box-shadow:inset 0 0 0 1px var(--ui-sel)}
+.opt .dot{width:22px;height:22px;border-radius:50%;flex:none;border:1px solid rgba(0,0,0,.1)}
+.opt small{display:block;color:var(--ui-mute);font-weight:400;font-size:12px}
+.opt.wide{flex:1 1 140px;flex-direction:column;align-items:flex-start;gap:2px}
+.opt.font b{font-size:18px;font-weight:700;display:block}
+:focus-visible{outline:2px solid #2f6fed;outline-offset:2px}
+.summary{position:fixed;left:0;bottom:0;width:380px;background:var(--ui-card);border-top:1px solid var(--ui-line);padding:14px 22px}
+.summary button{width:100%;height:46px;border:0;border-radius:12px;background:var(--ui-fg);color:var(--ui-card);font:700 15px Inter,sans-serif;cursor:pointer}
+.summary .ok{font-size:12px;color:#1a7f4b;margin:6px 0 0;min-height:16px}
+.stage{padding:28px 32px 48px;display:grid;gap:22px;align-content:start}
+.stage h3{font:600 13px Inter,sans-serif;color:var(--ui-mute);margin:0 0 10px}
+.row{display:grid;grid-template-columns:380px minmax(0,1fr);gap:28px;align-items:start}
+@media (max-width:1180px){.wrap{grid-template-columns:1fr}aside{height:auto;position:static}.summary{position:sticky;width:auto}.row{grid-template-columns:1fr}}
+
+/* =========== App preview (driven by CSS variables set from the choices) =========== */
+.app{--r:16px;--r-sm:10px;--pad:16px;--gap:12px;--fs:15px;font-family:var(--font);font-size:var(--fs);color:var(--fg)}
+.app .tnum{font-variant-numeric:tabular-nums}
+.phone{width:380px;max-width:100%;border-radius:42px;padding:11px;background:#0d0d0e;box-shadow:0 30px 60px -30px rgba(0,0,0,.45)}
+.screen{height:780px;border-radius:32px;overflow:hidden;background:var(--bg);display:flex;flex-direction:column}
+.sbar{display:flex;justify-content:space-between;padding:12px 24px 0;font:600 12px Inter,sans-serif;color:var(--fg)}
+.scroll{flex:1;overflow:auto;padding:8px 16px 16px}
+.hello{font-size:calc(var(--fs) + 8px);font-weight:700;letter-spacing:-.02em;margin:10px 0 0}
+.date{color:var(--mute);margin:2px 0 0;font-size:calc(var(--fs) - 1px)}
+.card{background:var(--card);border-radius:var(--r);padding:var(--pad);margin-top:var(--gap);border:var(--border)}
+.shadowy .card{box-shadow:0 1px 2px rgba(0,0,0,.05),0 8px 24px -12px rgba(0,0,0,.18)}
+.clock{font-size:46px;line-height:1;font-weight:800;letter-spacing:-.04em}
+.clock span{font-size:16px;font-weight:700;color:var(--mute);letter-spacing:0;margin-left:6px}
+.statusline{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;gap:8px}
+.pill{display:inline-flex;align-items:center;gap:6px;height:26px;padding:0 10px 0 8px;border-radius:999px;font-size:12px;font-weight:700;white-space:nowrap}
+.pill i{width:8px;height:8px;border-radius:50%;background:currentColor}
+.p-present{background:#e3f5e9;color:#14532d}.p-late{background:#fef3d6;color:#7a4a00}.p-absent{background:#fde8e8;color:#9b1c1c}.p-leave{background:#ddf4f3;color:#0f5757}.p-none{background:var(--soft);color:var(--mute)}
+.dark .p-present{background:#12321f;color:#86e5a9}.dark .p-late{background:#352708;color:#f8cf62}.dark .p-absent{background:#3a1517;color:#fca5a5}.dark .p-leave{background:#0f3131;color:#7adbd8}
+.chip{font-size:12px;color:var(--mute);border:1px solid var(--line);border-radius:999px;padding:3px 10px;white-space:nowrap}
+/* check-in button styles */
+.cta{border:0;cursor:pointer;background:var(--accent);color:var(--on-accent);font:700 18px var(--font);display:flex;align-items:center;justify-content:center;gap:10px}
+.cta svg{width:24px;height:24px}
+.btn-bar .cta{width:100%;height:64px;border-radius:var(--r-sm);margin-top:16px}
+.btn-round .ctawrap{display:grid;place-items:center;margin-top:14px}
+.btn-round .cta{width:168px;height:168px;border-radius:50%;flex-direction:column;font-size:17px;box-shadow:0 0 0 10px color-mix(in srgb,var(--accent) 14%,transparent),0 0 0 22px color-mix(in srgb,var(--accent) 7%,transparent)}
+.btn-round .cta svg{width:34px;height:34px}
+.btn-slide .slider{position:relative;margin-top:16px;height:64px;border-radius:999px;background:color-mix(in srgb,var(--accent) 14%,var(--card));display:flex;align-items:center;justify-content:center;font-weight:700;color:var(--accent-text)}
+.btn-slide .knob{position:absolute;left:6px;top:6px;width:52px;height:52px;border-radius:50%;background:var(--accent);color:var(--on-accent);display:grid;place-items:center}
+.btn-slide .knob svg{width:24px;height:24px}
+.btn-slide .cta{display:none}
+.slider{display:none}.btn-slide .slider{display:flex}
+.minis{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:14px}
+.mini{background:var(--soft);border-radius:var(--r-sm);padding:10px}
+.mini small{display:block;color:var(--mute);font-size:12px}
+.mini b{font-size:16px}
+.week{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;margin-top:10px;text-align:center;font-size:11px;color:var(--mute);font-weight:600}
+.week b{display:grid;place-items:center;height:34px;border-radius:calc(var(--r-sm) - 2px);font-size:12px;margin-top:4px}
+.week b.today{box-shadow:inset 0 0 0 2px var(--accent);color:var(--accent-text);background:var(--card)}
+.tabbar{display:grid;grid-template-columns:repeat(4,1fr);background:var(--card);border-top:1px solid var(--line);padding:8px 4px 18px;font-size:12px;font-weight:600;color:var(--mute);text-align:center}
+.tabbar span{display:flex;flex-direction:column;align-items:center;gap:4px}
+.tabbar svg{width:22px;height:22px}
+.tabbar .on{color:var(--accent-text)}
+.tabs-pill .tabbar .on svg{background:color-mix(in srgb,var(--accent) 16%,transparent);border-radius:999px;padding:3px 14px;width:52px;box-sizing:content-box;margin:-3px 0}
+/* desktop */
+.desk{border-radius:16px;overflow:hidden;border:1px solid var(--ui-line);background:var(--bg);display:grid;grid-template-columns:180px minmax(0,1fr);min-height:560px;box-shadow:0 30px 60px -40px rgba(0,0,0,.35)}
+.side{background:var(--side-bg);color:var(--side-fg);padding:16px 12px;display:flex;flex-direction:column;gap:2px}
+.side .brand{display:flex;align-items:center;gap:8px;font-weight:800;margin:0 6px 16px}
+.side .brand i{width:28px;height:28px;border-radius:9px;background:var(--accent);display:grid;place-items:center;color:var(--on-accent)}
+.side .brand svg{width:16px;height:16px}
+.side a{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:var(--r-sm);font-size:14px;color:inherit;text-decoration:none;opacity:.85}
+.side a svg{width:18px;height:18px}
+.side a.on{background:var(--side-active);color:var(--side-active-fg);opacity:1;font-weight:700}
+.main{padding:22px 24px;min-width:0}
+.main h4{font-size:calc(var(--fs) + 9px);margin:0;letter-spacing:-.02em}
+.main .sub{color:var(--mute);margin:2px 0 16px}
+.stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:var(--gap)}
+.stat{background:var(--card);border-radius:var(--r);padding:var(--pad);border:var(--border)}
+.shadowy .stat,.shadowy .tbl{box-shadow:0 1px 2px rgba(0,0,0,.05),0 8px 24px -12px rgba(0,0,0,.18)}
+.stat small{color:var(--mute);font-size:13px;font-weight:600;display:flex;justify-content:space-between}
+.stat b{display:block;font-size:30px;letter-spacing:-.03em;margin-top:6px}
+.tbl{margin-top:var(--gap);background:var(--card);border-radius:var(--r);border:var(--border);overflow-x:auto}
+.tbl table{width:100%;border-collapse:collapse;font-size:calc(var(--fs) - 1px)}
+.tbl th{text-align:left;font-size:12px;color:var(--mute);font-weight:700;padding:10px 14px;background:var(--soft)}
+.tbl td{padding:var(--rowpad) 12px;border-top:1px solid var(--line);white-space:nowrap}
+.tbl td.r,.tbl th.r{text-align:right}
+.av{display:inline-grid;place-items:center;width:28px;height:28px;border-radius:50%;background:var(--soft);font-size:11px;font-weight:700;margin-right:8px;vertical-align:middle}
+.primary{border:0;background:var(--accent);color:var(--on-accent);font:700 14px var(--font);padding:0 16px;height:40px;border-radius:var(--r-sm);display:inline-flex;align-items:center;gap:8px}
+.ghost{border:1px solid var(--line);background:var(--card);color:var(--fg);font:600 14px var(--font);padding:0 14px;height:40px;border-radius:var(--r-sm)}
+svg.i{stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+<symbol id="in" viewBox="0 0 24 24"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><path d="m10 17 5-5-5-5"/><path d="M15 12H3"/></symbol>
+<symbol id="home" viewBox="0 0 24 24"><path d="M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></symbol>
+<symbol id="cal" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></symbol>
+<symbol id="leave" viewBox="0 0 24 24"><path d="M13 8c0-2.8-2.2-5-5-5-2.8 0-5 2.2-5 5h4l-2 2"/><path d="M11 8c0-2.8 2.2-5 5-5 2.8 0 5 2.2 5 5h-4l2 2"/><path d="M12 8v14"/></symbol>
+<symbol id="note" viewBox="0 0 24 24"><path d="M13.4 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8.6z"/><path d="M14 2v6h6M8 13h8M8 17h5"/></symbol>
+<symbol id="users" viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.9M16 3.1a4 4 0 0 1 0 7.8"/></symbol>
+<symbol id="grid" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></symbol>
+<symbol id="chart" viewBox="0 0 24 24"><path d="M3 3v18h18"/><path d="M18 17V9M13 17V5M8 17v-3"/></symbol>
+<symbol id="clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></symbol>
+<symbol id="plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+</defs></svg>
+
+<div class="wrap">
+<aside aria-label="Design choices">
+  <h1>Design your app</h1>
+  <p class="lead">Click one option in each group. The preview on the right changes straight away. When it looks right, press <b>Copy my choices</b> and paste it to me.</p>
+
+  <div class="q"><h2>1. Main colour</h2><p>Used for buttons and the selected menu item. Attendance colours (green Present, red Absent…) never change.</p>
+    <div class="opts" data-key="accent">
+      <button class="opt" data-v="indigo"><span class="dot" style="background:#4338e0"></span>Indigo</button>
+      <button class="opt" data-v="blue"><span class="dot" style="background:#1d63ed"></span>Ocean blue</button>
+      <button class="opt" data-v="violet"><span class="dot" style="background:#7c3aed"></span>Violet</button>
+      <button class="opt" data-v="marigold"><span class="dot" style="background:#f2b21e"></span>Marigold</button>
+      <button class="opt" data-v="graphite"><span class="dot" style="background:#18181b"></span>Graphite</button>
+      <button class="opt" data-v="plum"><span class="dot" style="background:#9d174d"></span>Plum</button>
+    </div></div>
+
+  <div class="q"><h2>2. Background</h2><p>The colour behind everything.</p>
+    <div class="opts" data-key="bg">
+      <button class="opt wide" data-v="light">White<small>Bright and clean</small></button>
+      <button class="opt wide" data-v="cool">Cool grey<small>Soft on the eyes</small></button>
+      <button class="opt wide" data-v="dark">Dark<small>Night mode</small></button>
+    </div></div>
+
+  <div class="q"><h2>3. Shape</h2><p>How round the corners are.</p>
+    <div class="opts" data-key="shape">
+      <button class="opt wide" data-v="sharp">Sharp<small>Small corners, serious</small></button>
+      <button class="opt wide" data-v="soft">Soft<small>Medium, balanced</small></button>
+      <button class="opt wide" data-v="round">Round<small>Big friendly corners</small></button>
+    </div></div>
+
+  <div class="q"><h2>4. Cards</h2><p>How boxes stand out from the background.</p>
+    <div class="opts" data-key="depth">
+      <button class="opt wide" data-v="flat">Flat with lines<small>Thin border</small></button>
+      <button class="opt wide" data-v="shadow">Floating<small>Soft shadow</small></button>
+    </div></div>
+
+  <div class="q"><h2>5. Font</h2><p>The letters used everywhere.</p>
+    <div class="opts" data-key="font">
+      <button class="opt wide font" data-v="inter"><span><b style="font-family:Inter">Aa 09:45</b>Inter · neutral</span></button>
+      <button class="opt wide font" data-v="jakarta"><span><b style="font-family:'Plus Jakarta Sans'">Aa 09:45</b>Jakarta · modern</span></button>
+      <button class="opt wide font" data-v="schibsted"><span><b style="font-family:'Schibsted Grotesk'">Aa 09:45</b>Schibsted · bold</span></button>
+      <button class="opt wide font" data-v="atkinson"><span><b style="font-family:'Atkinson Hyperlegible Next'">Aa 09:45</b>Atkinson · easiest to read</span></button>
+    </div></div>
+
+  <div class="q"><h2>6. Text size</h2><p>Bigger helps staff who aren't used to apps.</p>
+    <div class="opts" data-key="size">
+      <button class="opt wide" data-v="normal">Normal</button>
+      <button class="opt wide" data-v="large">Large</button>
+    </div></div>
+
+  <div class="q"><h2>7. Punch button (phone)</h2><p>What staff press to punch in or out.</p>
+    <div class="opts" data-key="btn">
+      <button class="opt wide" data-v="bar">Wide bar<small>Full-width button</small></button>
+      <button class="opt wide" data-v="round">Big circle<small>One huge round button</small></button>
+      <button class="opt wide" data-v="slide">Slide to punch<small>Swipe, no accidents</small></button>
+    </div></div>
+
+  <div class="q"><h2>8. Side menu (computer)</h2><p>The menu on the left for HR and admins.</p>
+    <div class="opts" data-key="side">
+      <button class="opt wide" data-v="light">Light</button>
+      <button class="opt wide" data-v="tinted">Main colour</button>
+      <button class="opt wide" data-v="dark">Dark</button>
+    </div></div>
+
+  <div class="q"><h2>9. Tables (computer)</h2><p>How much fits on screen in the register.</p>
+    <div class="opts" data-key="density">
+      <button class="opt wide" data-v="comfortable">Comfortable<small>More space</small></button>
+      <button class="opt wide" data-v="compact">Compact<small>More rows</small></button>
+    </div></div>
+
+  <div class="q"><h2>10. Bottom tabs (phone)</h2><p>The selected tab at the bottom of the phone.</p>
+    <div class="opts" data-key="tabs">
+      <button class="opt wide" data-v="plain">Coloured icon</button>
+      <button class="opt wide" data-v="pill">Icon in a pill</button>
+    </div></div>
+
+  <div class="summary"><button id="copy">Copy my choices</button><p class="ok" id="ok" aria-live="polite"></p></div>
+</aside>
+
+<main class="stage">
+  <div class="row">
+    <div>
+      <h3>Employee's phone</h3>
+      <div class="app" id="app-phone">
+        <div class="phone"><div class="screen">
+          <div class="sbar"><span>9:41</span><span>5G</span></div>
+          <div class="scroll">
+            <p class="hello">Good morning, Meena</p>
+            <p class="date">Thursday, 12 Nov 2026</p>
+            <div class="card hero">
+              <div class="statusline"><span class="pill p-none"><i></i>Not punched in</span><span class="chip tnum">9:30 AM – 6:30 PM</span></div>
+              <div class="clock tnum">09:41<span>AM</span></div>
+              <div class="ctawrap"><button class="cta"><svg class="i"><use href="#in"/></svg>Punch in</button></div>
+              <div class="slider"><span class="knob"><svg class="i"><use href="#in"/></svg></span>Slide to punch in</div>
+              <div class="minis"><div class="mini"><small>Punched in</small><b class="tnum">–</b></div><div class="mini"><small>Worked</small><b class="tnum">0h 00m</b></div><div class="mini"><small>Out by</small><b class="tnum">6:30 PM</b></div></div>
+            </div>
+            <div class="card">
+              <b>This week</b>
+              <div class="week"><div>Mon<b class="p-present">P</b></div><div>Tue<b class="p-late">L</b></div><div>Wed<b class="p-present">P</b></div><div>Thu<b class="today">12</b></div><div>Fri<b class="p-none">–</b></div><div>Sat<b class="p-none">–</b></div><div>Sun<b class="p-none">–</b></div></div>
+            </div>
+            <div class="card"><b>Leave balance</b><div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap"><span class="pill p-leave tnum">Casual 9</span><span class="pill p-leave tnum">Sick 6</span><span class="pill p-none tnum">Earned 12</span></div></div>
+          </div>
+          <nav class="tabbar"><span class="on"><svg class="i"><use href="#home"/></svg>Home</span><span><svg class="i"><use href="#cal"/></svg>Attendance</span><span><svg class="i"><use href="#leave"/></svg>Leave</span><span><svg class="i"><use href="#note"/></svg>Report</span></nav>
+        </div></div>
+      </div>
+    </div>
+    <div>
+      <h3>HR on a computer</h3>
+      <div class="app" id="app-desk">
+        <div class="desk">
+          <nav class="side">
+            <div class="brand"><i><svg class="i"><use href="#clock"/></svg></i>Attendance</div>
+            <a class="on"><svg class="i"><use href="#grid"/></svg>Dashboard</a>
+            <a><svg class="i"><use href="#cal"/></svg>Register</a>
+            <a><svg class="i"><use href="#leave"/></svg>Leave</a>
+            <a><svg class="i"><use href="#users"/></svg>Employees</a>
+            <a><svg class="i"><use href="#chart"/></svg>Reports</a>
+          </nav>
+          <div class="main">
+            <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap">
+              <div><h4>Good morning, Lakshmi</h4><p class="sub">Thursday, 12 Nov 2026 · 48 employees</p></div>
+              <div style="display:flex;gap:8px"><button class="ghost">Export</button><button class="primary"><svg class="i" style="width:16px;height:16px"><use href="#plus"/></svg>Mark attendance</button></div>
+            </div>
+            <div class="stats">
+              <div class="stat"><small>Present <span class="pill p-present" style="height:20px;padding:0 6px"><i></i></span></small><b class="tnum">38</b></div>
+              <div class="stat"><small>Late <span class="pill p-late" style="height:20px;padding:0 6px"><i></i></span></small><b class="tnum">5</b></div>
+              <div class="stat"><small>Absent <span class="pill p-absent" style="height:20px;padding:0 6px"><i></i></span></small><b class="tnum">3</b></div>
+              <div class="stat"><small>On leave <span class="pill p-leave" style="height:20px;padding:0 6px"><i></i></span></small><b class="tnum">2</b></div>
+            </div>
+            <div class="tbl"><table>
+              <thead><tr><th>Employee</th><th class="r">In</th><th class="r">Out</th><th class="r">Worked</th><th>Status</th></tr></thead>
+              <tbody>
+                <tr><td><span class="av">AR</span>Anitha Raman</td><td class="r tnum">09:12 AM</td><td class="r tnum">06:34 PM</td><td class="r tnum">9h 22m</td><td><span class="pill p-present"><i></i>Present</span></td></tr>
+                <tr><td><span class="av">KS</span>Karthik Selvam</td><td class="r tnum">09:58 AM</td><td class="r tnum">06:51 PM</td><td class="r tnum">8h 53m</td><td><span class="pill p-late"><i></i>Late</span></td></tr>
+                <tr><td><span class="av">DS</span>Divya Sundar</td><td class="r">–</td><td class="r">–</td><td class="r">–</td><td><span class="pill p-leave"><i></i>On leave</span></td></tr>
+                <tr><td><span class="av">MK</span>Meena Krishnan</td><td class="r">–</td><td class="r">–</td><td class="r">–</td><td><span class="pill p-absent"><i></i>Absent</span></td></tr>
+                <tr><td><span class="av">LN</span>Lakshmi Narayanan</td><td class="r tnum">09:05 AM</td><td class="r tnum">06:40 PM</td><td class="r tnum">9h 35m</td><td><span class="pill p-present"><i></i>Present</span></td></tr>
+              </tbody>
+            </table></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</main>
+</div>
+
+<script>
+const ACCENT = {
+  indigo: { c: "#4338e0", on: "#fff", text: "#3a2fd0", dc: "#8b8bff", don: "#0e0e11", dtext: "#a9a9ff", name: "Indigo #4338E0" },
+  blue: { c: "#1d63ed", on: "#fff", text: "#1a56d0", dc: "#6ea2ff", don: "#0e0e11", dtext: "#8fb6ff", name: "Ocean blue #1D63ED" },
+  violet: { c: "#7c3aed", on: "#fff", text: "#6d28d9", dc: "#b392ff", don: "#0e0e11", dtext: "#c4a9ff", name: "Violet #7C3AED" },
+  marigold: { c: "#f2b21e", on: "#1b1b1d", text: "#8a5a00", dc: "#f2b21e", don: "#1b1b1d", dtext: "#f5c451", name: "Marigold #F2B21E" },
+  graphite: { c: "#18181b", on: "#fff", text: "#18181b", dc: "#ececef", don: "#18181b", dtext: "#ececef", name: "Graphite #18181B" },
+  plum: { c: "#9d174d", on: "#fff", text: "#9d174d", dc: "#f472b6", don: "#18181b", dtext: "#f9a8d4", name: "Plum #9D174D" },
+};
+const BG = {
+  light: { bg: "#ffffff", card: "#ffffff", soft: "#f3f4f6", line: "#e5e7eb", fg: "#17171a", mute: "#5f6068", cardBorder: true },
+  cool: { bg: "#f2f4f7", card: "#ffffff", soft: "#eef0f4", line: "#e2e6ec", fg: "#17171a", mute: "#5b616e" },
+  dark: { bg: "#0e0f12", card: "#17181c", soft: "#22242a", line: "#2c2e35", fg: "#f1f2f4", mute: "#a3a5ad", dark: true },
+};
+const SHAPE = { sharp: ["6px", "4px"], soft: ["14px", "10px"], round: ["24px", "16px"] };
+const FONT = { inter: ["Inter", "Inter"], jakarta: ["'Plus Jakarta Sans'", "Plus Jakarta Sans"], schibsted: ["'Schibsted Grotesk'", "Schibsted Grotesk"], atkinson: ["'Atkinson Hyperlegible Next'", "Atkinson Hyperlegible Next"] };
+const LABEL = {
+  bg: { light: "White", cool: "Cool grey", dark: "Dark" }, shape: { sharp: "Sharp corners", soft: "Soft corners", round: "Round corners" },
+  depth: { flat: "Flat cards with thin lines", shadow: "Floating cards with soft shadow" }, size: { normal: "Normal text", large: "Large text" },
+  btn: { bar: "Wide bar", round: "Big circle", slide: "Slide to punch" }, side: { light: "Light side menu", tinted: "Side menu in main colour", dark: "Dark side menu" },
+  density: { comfortable: "Comfortable tables", compact: "Compact tables" }, tabs: { plain: "Coloured icon", pill: "Icon in a pill" },
+};
+const state = { accent: "indigo", bg: "cool", shape: "soft", depth: "flat", font: "jakarta", size: "normal", btn: "bar", side: "light", density: "comfortable", tabs: "pill" };
+try { Object.assign(state, JSON.parse(localStorage.getItem("design-picker") || "{}")); } catch {}
+
+function apply() {
+  const a = ACCENT[state.accent], b = BG[state.bg], dark = !!b.dark;
+  for (const el of document.querySelectorAll(".app")) {
+    const s = el.style;
+    s.setProperty("--bg", b.bg); s.setProperty("--card", b.card); s.setProperty("--soft", b.soft); s.setProperty("--line", b.line);
+    s.setProperty("--fg", b.fg); s.setProperty("--mute", b.mute);
+    s.setProperty("--accent", dark ? a.dc : a.c); s.setProperty("--on-accent", dark ? a.don : a.on); s.setProperty("--accent-text", dark ? a.dtext : a.text);
+    s.setProperty("--r", SHAPE[state.shape][0]); s.setProperty("--r-sm", SHAPE[state.shape][1]);
+    s.setProperty("--font", FONT[state.font][0] + ", system-ui, sans-serif");
+    s.setProperty("--fs", state.size === "large" ? "17px" : "15px");
+    s.setProperty("--border", state.depth === "flat" || state.bg === "light" ? `1px solid ${b.line}` : "1px solid transparent");
+    s.setProperty("--rowpad", state.density === "compact" ? "8px" : "13px");
+    const side = state.side === "dark" ? { bg: "#141519", fg: "#d8d9de", act: "#2a2c33", actfg: "#fff" }
+      : state.side === "tinted" ? { bg: dark ? a.dc : a.c, fg: dark ? a.don : a.on, act: "rgba(255,255,255,.18)", actfg: dark ? a.don : a.on }
+      : { bg: b.card, fg: b.mute, act: `color-mix(in srgb, ${dark ? a.dc : a.c} 14%, ${b.card})`, actfg: dark ? a.dtext : a.text };
+    s.setProperty("--side-bg", side.bg); s.setProperty("--side-fg", side.fg); s.setProperty("--side-active", side.act); s.setProperty("--side-active-fg", side.actfg);
+    el.classList.toggle("dark", dark);
+    el.classList.toggle("shadowy", state.depth === "shadow" && state.bg !== "dark");
+    el.classList.remove("btn-bar", "btn-round", "btn-slide"); el.classList.add("btn-" + state.btn);
+    el.classList.toggle("tabs-pill", state.tabs === "pill");
+  }
+  document.querySelector(".desk").style.borderRight = state.side === "light" ? "" : "";
+  document.querySelectorAll(".opts").forEach((g) => g.querySelectorAll(".opt").forEach((o) => o.setAttribute("aria-pressed", o.dataset.v === state[g.dataset.key])));
+  try { localStorage.setItem("design-picker", JSON.stringify(state)); } catch {}
+}
+document.querySelectorAll(".opts").forEach((g) => g.addEventListener("click", (e) => {
+  const o = e.target.closest(".opt"); if (!o) return;
+  state[g.dataset.key] = o.dataset.v; apply(); document.getElementById("ok").textContent = "";
+}));
+document.getElementById("copy").addEventListener("click", async () => {
+  const text = [
+    "My design choices:",
+    `1. Main colour: ${ACCENT[state.accent].name}`,
+    `2. Background: ${LABEL.bg[state.bg]}`,
+    `3. Shape: ${LABEL.shape[state.shape]}`,
+    `4. Cards: ${LABEL.depth[state.depth]}`,
+    `5. Font: ${FONT[state.font][1]}`,
+    `6. Text size: ${LABEL.size[state.size]}`,
+    `7. Punch button: ${LABEL.btn[state.btn]}`,
+    `8. Side menu: ${LABEL.side[state.side]}`,
+    `9. Tables: ${LABEL.density[state.density]}`,
+    `10. Bottom tabs: ${LABEL.tabs[state.tabs]}`,
+  ].join("\n");
+  try { await navigator.clipboard.writeText(text); document.getElementById("ok").textContent = "Copied. Paste it in the chat."; }
+  catch { prompt("Copy this text:", text); }
+});
+apply();
+</script>
+</body>
+</html>

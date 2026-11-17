@@ -1,0 +1,460 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Attendance Glass Concept</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300..700&display=swap" rel="stylesheet" />
+<style>
+:root {
+  --bg: #f5ecd6; --bg-2: #fbf7ee;
+  --blob-1: #ffd66b; --blob-2: #ffbe98; --blob-3: #bfe6d4;
+  --glass: rgba(255, 255, 255, 0.58); --glass-2: rgba(255, 255, 255, 0.78); --glass-edge: rgba(255, 255, 255, 0.9);
+  --glass-shadow: 0 24px 60px -24px rgba(120, 88, 30, 0.35), 0 2px 6px rgba(120, 88, 30, 0.06);
+  --ink: #151410; --ink-2: #57534a; --ink-3: #85806f; --line: rgba(21, 20, 16, 0.08);
+  --on-ink: #ffffff;
+  --butter: #f7cf6b; --butter-soft: #fbe7b0; --on-butter: #3b2a00;
+  --present: #1f9d55; --present-t: rgba(31, 157, 85, 0.14);
+  --late: #c47f00; --late-t: rgba(212, 138, 0, 0.16);
+  --leave: #0f8b8d; --leave-t: rgba(15, 139, 141, 0.14);
+  --absent: #d93a3a; --absent-t: rgba(217, 58, 58, 0.13);
+  --wfh: #6b5bd6; --wfh-t: rgba(107, 91, 214, 0.14);
+  --track: rgba(21, 20, 16, 0.07); --frame: #ffffff;
+}
+:root[data-theme="dark"] {
+  --bg: #15130f; --bg-2: #1c1914;
+  --blob-1: #6b5114; --blob-2: #5a2f1f; --blob-3: #17463a;
+  --glass: rgba(38, 34, 28, 0.55); --glass-2: rgba(48, 43, 36, 0.72); --glass-edge: rgba(255, 255, 255, 0.09);
+  --glass-shadow: 0 24px 60px -24px rgba(0, 0, 0, 0.7), 0 2px 6px rgba(0, 0, 0, 0.3);
+  --ink: #f6f1e6; --ink-2: #c9c1b0; --ink-3: #9a917f; --line: rgba(255, 255, 255, 0.08);
+  --on-ink: #15130f;
+  --butter: #f7cf6b; --butter-soft: rgba(247, 207, 107, 0.2); --on-butter: #2e2100;
+  --present: #46d08a; --late: #f3b53f; --leave: #3cc6c4; --absent: #f26a6a; --wfh: #a89bff;
+  --track: rgba(255, 255, 255, 0.08); --frame: #2a261f;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: "Outfit", system-ui, sans-serif; color: var(--ink); min-height: 100vh; font-size: 14px;
+  background: var(--bg); -webkit-font-smoothing: antialiased; overflow-x: hidden;
+}
+/* soft colour behind the glass, so the frosting has something to blur */
+.blobs { position: fixed; inset: 0; z-index: -1; overflow: hidden; background: linear-gradient(180deg, var(--bg-2), var(--bg)); }
+.blobs i { position: absolute; border-radius: 50%; filter: blur(70px); opacity: 0.75; }
+.blobs i:nth-child(1) { width: 520px; height: 520px; background: var(--blob-1); top: -120px; left: 18%; }
+.blobs i:nth-child(2) { width: 420px; height: 420px; background: var(--blob-2); top: 380px; right: -80px; }
+.blobs i:nth-child(3) { width: 460px; height: 460px; background: var(--blob-3); bottom: -160px; left: -100px; }
+.n { font-variant-numeric: tabular-nums; }
+button { font: inherit; color: inherit; background: none; border: 0; cursor: pointer; }
+button:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+svg { flex: none; }
+
+.glass {
+  background: var(--glass); border: 1px solid var(--glass-edge); box-shadow: var(--glass-shadow);
+  -webkit-backdrop-filter: blur(22px) saturate(160%); backdrop-filter: blur(22px) saturate(160%);
+}
+.pill-btn { height: 50px; border-radius: 999px; background: var(--ink); color: var(--on-ink); font-weight: 500; font-size: 15px; display: flex; align-items: center; justify-content: center; gap: 10px; width: 100%; }
+.chip { display: inline-flex; align-items: center; gap: 6px; height: 32px; padding: 0 12px; border-radius: 999px; font-size: 13px; font-weight: 500; color: var(--ink-2); border: 1px solid var(--line); background: var(--glass-2); white-space: nowrap; }
+.chip b { font-weight: 600; font-size: 11px; min-width: 22px; height: 20px; border-radius: 999px; display: grid; place-items: center; background: var(--track); color: var(--ink-2); }
+.chip.on { background: var(--ink); color: var(--on-ink); border-color: transparent; }
+.chip.on b { background: rgba(255,255,255,.2); color: var(--on-ink); }
+:root[data-theme="dark"] .chip.on b { background: rgba(0,0,0,.15); }
+.tag { display: inline-flex; align-items: center; gap: 5px; height: 24px; padding: 0 10px; border-radius: 999px; font-size: 12px; font-weight: 500; }
+.tag::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+
+/* ---------- page ---------- */
+.page { max-width: 1320px; margin: 0 auto; padding: 28px 24px 80px; }
+.top { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 30px; }
+.brand { display: flex; align-items: center; gap: 12px; }
+.mark { width: 44px; height: 44px; border-radius: 50%; background: var(--ink); color: var(--on-ink); display: grid; place-items: center; }
+.brand b { font-size: 17px; font-weight: 600; display: block; }
+.brand small { color: var(--ink-3); font-size: 13px; }
+.seg { display: inline-flex; padding: 4px; border-radius: 999px; }
+.seg button { height: 36px; padding: 0 16px; border-radius: 999px; font-weight: 500; color: var(--ink-2); }
+.seg button[aria-pressed="true"] { background: var(--ink); color: var(--on-ink); }
+
+.phones { display: flex; gap: 26px; justify-content: center; align-items: flex-start; flex-wrap: wrap; }
+.phone { width: 300px; height: 640px; border-radius: 44px; padding: 8px; background: var(--glass); border: 1px solid var(--glass-edge); box-shadow: var(--glass-shadow); -webkit-backdrop-filter: blur(24px); backdrop-filter: blur(24px); }
+.phone:nth-child(2) { margin-top: 36px; }
+.scr { height: 100%; border-radius: 37px; overflow: hidden; position: relative; display: flex; flex-direction: column;
+  background: linear-gradient(180deg, rgba(255,255,255,.75), rgba(255,255,255,.35)); }
+:root[data-theme="dark"] .scr { background: linear-gradient(180deg, rgba(40,36,30,.8), rgba(30,27,22,.5)); }
+.sb { display: flex; justify-content: space-between; padding: 14px 24px 0; font-size: 12px; font-weight: 600; }
+.body { flex: 1; padding: 12px 16px 0; overflow: hidden; }
+.hdr { display: flex; justify-content: space-between; align-items: center; }
+.icon-btn { width: 40px; height: 40px; border-radius: 50%; display: grid; place-items: center; background: var(--glass-2); border: 1px solid var(--line); position: relative; }
+.icon-btn.dot::after { content: ""; position: absolute; top: 8px; right: 9px; width: 7px; height: 7px; border-radius: 50%; background: var(--butter); border: 2px solid var(--bg-2); }
+.av { width: 40px; height: 40px; border-radius: 50%; display: grid; place-items: center; font-weight: 600; font-size: 13px; background: var(--butter); color: var(--on-butter); flex: none; }
+.av.sm { width: 34px; height: 34px; font-size: 12px; }
+.h1 { font-size: 26px; font-weight: 500; letter-spacing: -0.02em; line-height: 1.15; }
+.muted { color: var(--ink-3); }
+
+/* floating tab bar */
+.dock { margin: 0 14px 14px; height: 62px; border-radius: 999px; display: flex; justify-content: space-between; align-items: center; padding: 0 7px; }
+.dock span { width: 48px; height: 48px; border-radius: 50%; display: grid; place-items: center; color: var(--ink-2); border: 1px solid var(--line); background: var(--glass-2); }
+.dock span.on { background: var(--ink); color: var(--on-ink); border-color: transparent; }
+
+/* login */
+.login { padding: 30px 22px 0; }
+.login .h1 { font-size: 30px; text-align: center; margin-top: 12px; }
+.login p.sub { text-align: center; color: var(--ink-3); margin-top: 6px; }
+.field { margin-top: 14px; }
+.field label { display: block; font-size: 12px; color: var(--ink-3); margin: 0 0 6px 16px; }
+.field div { height: 50px; border-radius: 999px; border: 1px solid var(--line); background: var(--glass-2); display: flex; align-items: center; padding: 0 18px; font-size: 14px; justify-content: space-between; }
+.forgot { text-align: right; font-size: 12.5px; color: var(--ink-2); margin: 10px 6px 18px; }
+.remember { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--ink-2); margin: 12px 0 0 8px; }
+.remember i { width: 18px; height: 18px; border-radius: 6px; background: var(--ink); display: grid; place-items: center; color: var(--on-ink); }
+.orbit { position: relative; height: 150px; margin-top: 24px; }
+.orbit .g { position: absolute; border-radius: 26px; display: grid; place-items: center; }
+.clockface { width: 104px; height: 104px; left: 50%; top: 10px; transform: translateX(-50%) rotate(-6deg); border-radius: 50% !important;
+  background: radial-gradient(circle at 35% 30%, #fff, var(--butter-soft) 60%, var(--butter)); box-shadow: 0 20px 40px -14px rgba(160,110,0,.55), inset 0 -6px 16px rgba(160,110,0,.25); }
+.clockface svg { width: 70px; height: 70px; color: var(--on-butter); }
+.badge-a { left: -4px; top: 52px; width: 72px; height: 72px; transform: rotate(-10deg); z-index: 1; }
+.badge-b { right: -4px; top: 40px; width: 72px; height: 72px; transform: rotate(9deg); z-index: 1; }
+.badge-a b, .badge-b b { font-size: 20px; font-weight: 600; display: block; line-height: 1; }
+.badge-a small, .badge-b small { font-size: 10.5px; color: var(--ink-3); }
+
+/* home */
+.hero { margin-top: 14px; border-radius: 30px; padding: 16px; }
+.hero .row1 { display: flex; justify-content: space-between; align-items: center; }
+.pill-time { height: 26px; padding: 0 10px; border-radius: 999px; background: var(--glass-2); border: 1px solid var(--line); font-size: 12px; display: inline-flex; align-items: center; gap: 4px; color: var(--ink-2); }
+.pill-time b { color: var(--ink); font-weight: 600; }
+.timer { font-size: 66px; font-weight: 300; letter-spacing: -0.04em; line-height: 1; margin-top: 14px; display: flex; align-items: baseline; gap: 6px; }
+.timer small { font-size: 15px; font-weight: 400; letter-spacing: 0; color: var(--ink-3); }
+.hero .left { font-size: 13px; color: var(--ink-2); margin-top: 6px; }
+.strip { margin-top: 16px; }
+.track { position: relative; height: 28px; border-radius: 999px; background: var(--track); overflow: hidden; }
+.track .win { position: absolute; top: 3px; bottom: 3px; border-radius: 999px; background: var(--glass-2); border: 1px dashed rgba(21,20,16,.18); }
+:root[data-theme="dark"] .track .win { border-color: rgba(255,255,255,.18); }
+.track .fill { position: absolute; top: 6px; bottom: 6px; border-radius: 999px; background: linear-gradient(90deg, var(--butter), #f5b53c); }
+.track .now { position: absolute; top: 3px; bottom: 3px; width: 22px; margin-left: -11px; border-radius: 50%; background: var(--ink); box-shadow: 0 0 0 3px var(--glass-2); }
+.ticks { display: flex; justify-content: space-between; font-size: 10.5px; color: var(--ink-3); margin: 6px 4px 0; }
+.hero .pill-btn { margin-top: 16px; }
+.hold { font-size: 11.5px; opacity: .6; font-weight: 400; }
+.sec-t { display: flex; justify-content: space-between; align-items: center; margin: 16px 2px 10px; font-size: 16px; font-weight: 500; }
+.sec-t a { font-size: 12.5px; color: var(--ink-2); text-decoration: none; }
+.days { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; }
+.days div { border-radius: 18px; padding: 8px 0; text-align: center; font-size: 11px; color: var(--ink-3); }
+.days div b { display: block; font-size: 16px; font-weight: 600; margin-top: 2px; color: var(--ink); }
+.days div i { display: block; width: 6px; height: 6px; border-radius: 50%; margin: 5px auto 0; }
+.days .today { background: var(--butter); color: var(--on-butter); }
+.days .today b { color: var(--on-butter); }
+.asks { display: flex; gap: 8px; margin-top: 10px; }
+.ask { flex: 1; border-radius: 22px; padding: 12px 10px; text-align: left; }
+.ask .ic { width: 34px; height: 34px; border-radius: 50%; display: grid; place-items: center; background: var(--glass-2); border: 1px solid var(--line); }
+.ask b { display: block; font-weight: 500; font-size: 13px; margin-top: 8px; }
+.ask small { font-size: 11px; color: var(--ink-3); }
+
+/* requests */
+.chips { display: flex; gap: 6px; margin-top: 14px; overflow: hidden; }
+.req { border-radius: 28px; padding: 14px; margin-top: 12px; }
+.req .who { display: flex; align-items: center; gap: 10px; }
+.req .who > div { min-width: 0; flex: 1; }
+.req .who b { font-weight: 500; font-size: 15px; display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.req .who small { white-space: nowrap; }
+.req .who small { font-size: 12px; color: var(--ink-3); }
+.req .who .tag { margin-left: auto; }
+.dates { margin-top: 12px; border-radius: 20px; padding: 12px; background: var(--glass-2); border: 1px solid var(--line); display: flex; justify-content: space-between; align-items: center; }
+.dates b { font-size: 18px; font-weight: 500; }
+.dates small { display: block; font-size: 12px; color: var(--ink-3); margin-top: 2px; }
+.dates .left { text-align: right; font-size: 12px; color: var(--ink-2); }
+.dates .left b { display: block; font-size: 15px; }
+.choice { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 12px; }
+.choice button { height: 44px; border-radius: 999px; font-weight: 500; }
+.choice .no { border: 1px solid var(--line); background: var(--glass-2); color: var(--ink-2); }
+.choice .yes { background: var(--butter); color: var(--on-butter); }
+
+/* ---------- desktop ---------- */
+.desk { margin-top: 56px; border-radius: 36px; padding: 14px; display: grid; grid-template-columns: 220px 1fr; gap: 14px; }
+.side { border-radius: 26px; padding: 18px 12px; display: flex; flex-direction: column; gap: 4px; background: var(--glass-2); border: 1px solid var(--line); }
+.side .brand { padding: 0 6px 18px; }
+.side .brand .mark { width: 38px; height: 38px; }
+.side .brand b { font-size: 15px; }
+.nav { display: flex; align-items: center; gap: 10px; height: 42px; padding: 0 14px; border-radius: 999px; font-weight: 400; color: var(--ink-2); }
+.nav.on { background: var(--ink); color: var(--on-ink); font-weight: 500; }
+.nav em { margin-left: auto; font-style: normal; font-size: 11px; font-weight: 600; min-width: 22px; height: 20px; border-radius: 999px; display: grid; place-items: center; background: var(--butter); color: var(--on-butter); }
+.side .spacer { height: 10px; }
+.side .now { margin-top: auto; border-radius: 22px; padding: 14px; background: var(--butter); color: var(--on-butter); }
+.side .now small { font-size: 12px; opacity: .75; }
+.side .now b { display: block; font-size: 26px; font-weight: 500; letter-spacing: -0.02em; }
+.main { padding: 10px 10px 6px; min-width: 0; }
+.mh { display: flex; justify-content: space-between; align-items: center; gap: 16px; }
+.mh h2 { font-size: 30px; font-weight: 500; letter-spacing: -0.02em; }
+.mh p { color: var(--ink-3); margin-top: 2px; }
+.mh .tools { display: flex; gap: 8px; align-items: center; }
+.search { height: 42px; width: 240px; border-radius: 999px; display: flex; align-items: center; gap: 8px; padding: 0 16px; color: var(--ink-3); background: var(--glass-2); border: 1px solid var(--line); }
+.tally { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-top: 18px; }
+.tile { border-radius: 26px; padding: 16px 18px; }
+.tile .k { display: flex; justify-content: space-between; align-items: center; color: var(--ink-2); }
+.tile .k i { width: 32px; height: 32px; border-radius: 50%; display: grid; place-items: center; }
+.tile b { display: block; font-size: 44px; font-weight: 300; letter-spacing: -0.04em; line-height: 1.1; margin-top: 6px; }
+.tile b small { font-size: 18px; color: var(--ink-3); letter-spacing: 0; }
+.tile .bar { height: 6px; border-radius: 999px; background: var(--track); margin-top: 10px; overflow: hidden; }
+.tile .bar span { display: block; height: 100%; border-radius: 999px; }
+.cols { display: grid; grid-template-columns: minmax(0, 1fr) 320px; gap: 12px; margin-top: 12px; }
+.panel { border-radius: 30px; padding: 18px; }
+.ph { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; gap: 10px; flex-wrap: wrap; }
+.ph h3 { font-size: 18px; font-weight: 500; }
+.tl .axis, .tl .r { display: grid; grid-template-columns: 170px 1fr 56px; gap: 12px; align-items: center; }
+.tl .axis { font-size: 11px; color: var(--ink-3); padding-bottom: 4px; }
+.tl .hrs { position: relative; height: 14px; }
+.tl .hrs span { position: absolute; transform: translateX(-50%); white-space: nowrap; }
+.tl .hrs span:first-child { transform: none; } .tl .hrs span:last-child { transform: translateX(-100%); }
+.tl .r { padding: 6px 0; }
+.tl .who { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.tl .who b { font-weight: 500; font-size: 13.5px; display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.tl .who small { font-size: 11.5px; color: var(--ink-3); }
+.tl .lane { position: relative; height: 30px; border-radius: 999px; background: var(--track); }
+.tl .lane .win { position: absolute; top: 3px; bottom: 3px; border-radius: 999px; background: var(--glass-2); }
+.tl .lane .bar { position: absolute; top: 7px; bottom: 7px; border-radius: 999px; }
+.tl .lane .lateseg { position: absolute; top: 7px; bottom: 7px; border-radius: 999px 0 0 999px; background: repeating-linear-gradient(-45deg, var(--late) 0 3px, transparent 3px 6px); opacity: .5; }
+.tl .lane .soft { position: absolute; top: 7px; bottom: 7px; border-radius: 999px; }
+.tl .lane .note { position: absolute; top: 50%; transform: translateY(-50%); font-size: 12px; font-weight: 500; white-space: nowrap; }
+.tl .t { text-align: right; font-size: 13px; color: var(--ink-2); }
+.tl .t.late { color: var(--late); font-weight: 600; }
+.lanes { position: relative; }
+.nowline { position: absolute; top: 0; bottom: 0; width: 2px; background: var(--ink); border-radius: 2px; }
+.nowline::before { content: "12:21"; position: absolute; top: -20px; left: 50%; transform: translateX(-50%); font-size: 10.5px; font-weight: 600; background: var(--ink); color: var(--on-ink); padding: 1px 6px; border-radius: 999px; }
+.legend { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 14px; }
+.wait .req { margin-top: 10px; padding: 14px; border-radius: 24px; background: var(--glass-2); border: 1px solid var(--line); box-shadow: none; }
+.wait .req:first-of-type { margin-top: 0; }
+.wait p { font-size: 13px; color: var(--ink-2); margin-top: 8px; }
+.wait .choice button { height: 38px; font-size: 13px; }
+
+.notes { margin-top: 28px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+.notes div { border-radius: 26px; padding: 18px; }
+.notes b { font-weight: 500; font-size: 16px; }
+.notes p { color: var(--ink-2); margin-top: 6px; line-height: 1.55; }
+
+@media (max-width: 1100px) { .desk { grid-template-columns: 1fr; } .side { display: none; } .cols { grid-template-columns: 1fr; } .tally { grid-template-columns: repeat(2, 1fr); } .notes { grid-template-columns: 1fr; } }
+@media (max-width: 640px) { .mh { flex-wrap: wrap; } .tools .av, .tools .icon-btn { display: none; } .desk { padding: 8px; border-radius: 28px; } .panel { padding: 14px; } .tally { gap: 8px; } .tile b { font-size: 34px; } .search { display: none; } .tl .axis, .tl .r { grid-template-columns: 96px 1fr 44px; } .phone:nth-child(2) { margin-top: 0; } .page { padding: 20px 16px 60px; } }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+</head>
+<body>
+<div class="blobs" aria-hidden="true"><i></i><i></i><i></i></div>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+  <symbol id="clock" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></symbol>
+  <symbol id="bell" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></symbol>
+  <symbol id="home" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m3 10 9-7 9 7v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></symbol>
+  <symbol id="cal" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="3" y="4" width="18" height="18" rx="4"/><path d="M16 2v4M8 2v4M3 10h18"/></symbol>
+  <symbol id="inbox" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-6l-2 3h-4l-2-3H2"/><path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/></symbol>
+  <symbol id="note" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M8 13h8M8 17h5"/></symbol>
+  <symbol id="user" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></symbol>
+  <symbol id="out" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"/></symbol>
+  <symbol id="palm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M13 8c0-2.76-2.46-5-5.5-5S2 5.24 2 8h2l1-1 1 1h4M13 7.14A5.82 5.82 0 0 1 16.5 6c3.04 0 5.5 2.24 5.5 5h-3l-1-1-1 1h-3M5.89 9.71c-2.15 2.15-2.3 5.47-.35 7.43l4.24-4.25.7-.7.71-.71 2.12-2.12c-1.95-1.96-5.27-1.8-7.42.35M11 15.5c.5 2.5-.17 4.5-1 6.5h4c2-5.5-.5-12-1-14"/></symbol>
+  <symbol id="timer" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M10 2h4M12 14l3-3"/><circle cx="12" cy="14" r="8"/></symbol>
+  <symbol id="house" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.5 12 3l9 7.5M5 9v11h14V9"/><path d="M10 20v-6h4v6"/></symbol>
+  <symbol id="filter" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M22 3H2l8 9.46V19l4 2v-8.54z"/></symbol>
+  <symbol id="eye" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></symbol>
+  <symbol id="check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></symbol>
+  <symbol id="grid" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="7" height="7" rx="2"/><rect x="14" y="3" width="7" height="7" rx="2"/><rect x="3" y="14" width="7" height="7" rx="2"/><rect x="14" y="14" width="7" height="7" rx="2"/></symbol>
+  <symbol id="users" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></symbol>
+  <symbol id="chart" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M3 3v18h18M7 15v2M12 10v7M17 6v11"/></symbol>
+  <symbol id="search" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></symbol>
+  <symbol id="sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></symbol>
+</defs></svg>
+
+<div class="page">
+  <div class="top">
+    <div class="brand"><span class="mark"><svg width="22" height="22"><use href="#clock"/></svg></span><div><b>Attendance</b><small>Glass concept · v4</small></div></div>
+    <div class="seg glass" role="group" aria-label="Theme"><button data-t="light" aria-pressed="true">Light</button><button data-t="dark" aria-pressed="false">Dark</button></div>
+  </div>
+
+  <div class="phones">
+    <!-- 1. Sign in -->
+    <div class="phone"><div class="scr">
+      <div class="sb"><span class="n">9:02</span><span>5G ▮</span></div>
+      <div class="login">
+        <div class="orbit" aria-hidden="true">
+          <div class="g glass badge-a"><div style="text-align:center"><b class="n">9:30</b><small>shift starts</small></div></div>
+          <div class="g clockface"><svg><use href="#clock"/></svg></div>
+          <div class="g glass badge-b"><div style="text-align:center"><b class="n">18</b><small>days present</small></div></div>
+        </div>
+        <h1 class="h1">Welcome back</h1>
+        <p class="sub">Sign in to punch in for today</p>
+        <div class="field"><label>Email, phone or username</label><div>praveen@demostudio.in</div></div>
+        <div class="field"><label>Password</label><div><span>••••••••••</span><svg width="18" height="18" style="color:var(--ink-3)"><use href="#eye"/></svg></div></div>
+        <div class="remember"><i><svg width="11" height="11"><use href="#check"/></svg></i>Keep me signed in for 30 days</div>
+        <p class="forgot">Forgot password?</p>
+        <button class="pill-btn">Sign in</button>
+      </div>
+    </div></div>
+
+    <!-- 2. Home -->
+    <div class="phone"><div class="scr">
+      <div class="sb"><span class="n">12:21</span><span>5G ▮</span></div>
+      <div class="body">
+        <div class="hdr">
+          <div><p class="muted" style="font-size:13px">Thursday, 12 Nov</p><p class="h1" style="font-size:24px">Hi, Praveen</p></div>
+          <div style="display:flex;gap:8px"><span class="icon-btn dot"><svg width="18" height="18"><use href="#bell"/></svg></span><span class="av">PK</span></div>
+        </div>
+        <section class="hero glass">
+          <div class="row1"><span class="tag" style="background:var(--present-t);color:var(--present)">On shift since 9:41</span><span class="pill-time">Out at <b class="n">6:41</b></span></div>
+          <div class="timer n"><span>2:40</span><small>hrs worked</small></div>
+          <p class="left n">6h 20m to go · shift 9:30 AM – 6:30 PM</p>
+          <div class="strip">
+            <div class="track"><div class="win" style="left:12.5%;width:56.25%"></div><div class="fill" style="left:14.1%;width:16.6%"></div><div class="now" style="left:30.7%"></div></div>
+            <div class="ticks n"><span>8</span><span>10</span><span>12</span><span>2</span><span>4</span><span>6</span><span>8</span></div>
+          </div>
+          <button class="pill-btn"><svg width="18" height="18"><use href="#out"/></svg>Punch out <span class="hold">· hold</span></button>
+        </section>
+        <div class="sec-t">This week <a href="#">Calendar</a></div>
+        <div class="days n">
+          <div class="glass">Mon<b>9</b><i style="background:var(--present)"></i></div>
+          <div class="glass">Tue<b>10</b><i style="background:var(--late)"></i></div>
+          <div class="glass">Wed<b>11</b><i style="background:var(--present)"></i></div>
+          <div class="today">Thu<b>12</b><i style="background:var(--on-butter)"></i></div>
+          <div class="glass">Fri<b>13</b><i style="background:transparent"></i></div>
+        </div>
+      </div>
+      <nav class="dock glass">
+        <span class="on"><svg width="20" height="20"><use href="#home"/></svg></span>
+        <span><svg width="20" height="20"><use href="#cal"/></svg></span>
+        <span><svg width="20" height="20"><use href="#inbox"/></svg></span>
+        <span><svg width="20" height="20"><use href="#note"/></svg></span>
+        <span><svg width="20" height="20"><use href="#user"/></svg></span>
+      </nav>
+    </div></div>
+
+    <!-- 3. Requests (approver) -->
+    <div class="phone"><div class="scr">
+      <div class="sb"><span class="n">12:24</span><span>5G ▮</span></div>
+      <div class="body">
+        <div class="hdr"><p class="h1">Requests</p><span class="icon-btn dot"><svg width="18" height="18"><use href="#bell"/></svg></span></div>
+        <div class="chips">
+          <span class="chip" style="padding:0 9px"><svg width="15" height="15"><use href="#filter"/></svg></span>
+          <span class="chip on">Pending <b>3</b></span>
+          <span class="chip">Approved <b>12</b></span>
+          <span class="chip">Mine</span>
+        </div>
+        <article class="req glass">
+          <div class="who"><span class="av sm" style="background:var(--leave-t);color:var(--leave)">KS</span><div><b>Karthik Selvam</b><small>Creative · 2h ago</small></div><span class="tag" style="background:var(--leave-t);color:var(--leave)">Leave</span></div>
+          <div class="dates n"><div><b>18 – 20 Nov</b><small>Casual leave · 3 days</small></div><div class="left">Balance<b>12 → 9</b></div></div>
+          <div class="choice"><button class="no">Decline</button><button class="yes">Approve</button></div>
+        </article>
+        <article class="req glass">
+          <div class="who"><span class="av sm" style="background:var(--late-t);color:var(--late)">DS</span><div><b>Divya Sundar</b><small>Operations · 40m ago</small></div><span class="tag" style="background:var(--late-t);color:var(--late)">Permission</span></div>
+          <div class="dates n"><div><b>4:00 – 6:00 PM</b><small>Today · bank work</small></div><div class="left">This month<b>1 of 2</b></div></div>
+          <div class="choice"><button class="no">Decline</button><button class="yes">Approve</button></div>
+        </article>
+      </div>
+      <nav class="dock glass">
+        <span><svg width="20" height="20"><use href="#home"/></svg></span>
+        <span><svg width="20" height="20"><use href="#cal"/></svg></span>
+        <span class="on"><svg width="20" height="20"><use href="#inbox"/></svg></span>
+        <span><svg width="20" height="20"><use href="#note"/></svg></span>
+        <span><svg width="20" height="20"><use href="#user"/></svg></span>
+      </nav>
+    </div></div>
+  </div>
+
+  <!-- Desktop -->
+  <div class="desk glass">
+    <aside class="side">
+      <div class="brand"><span class="mark"><svg width="18" height="18"><use href="#clock"/></svg></span><div><b>Demo Studio</b><small>HR Manager</small></div></div>
+      <span class="nav on"><svg width="18" height="18"><use href="#home"/></svg>Today</span>
+      <span class="nav"><svg width="18" height="18"><use href="#grid"/></svg>Muster roll</span>
+      <span class="nav"><svg width="18" height="18"><use href="#inbox"/></svg>Requests<em>3</em></span>
+      <span class="nav"><svg width="18" height="18"><use href="#note"/></svg>Daily reports</span>
+      <div class="spacer"></div>
+      <span class="nav"><svg width="18" height="18"><use href="#users"/></svg>Employees</span>
+      <span class="nav"><svg width="18" height="18"><use href="#sun"/></svg>Holidays</span>
+      <span class="nav"><svg width="18" height="18"><use href="#chart"/></svg>Reports</span>
+      <div class="now"><small>India time</small><b class="n">12:21 PM</b><small>Thursday, 12 Nov</small></div>
+    </aside>
+    <main class="main">
+      <div class="mh">
+        <div><h2>Who's in today</h2><p>50 people expected · shift 9:30 AM – 6:30 PM</p></div>
+        <div class="tools"><div class="search"><svg width="15" height="15"><use href="#search"/></svg>Find a person</div><span class="icon-btn dot"><svg width="18" height="18"><use href="#bell"/></svg></span><span class="av">LN</span></div>
+      </div>
+      <div class="tally n">
+        <div class="tile glass"><div class="k">In the office<i style="background:var(--present-t);color:var(--present)"><svg width="16" height="16"><use href="#check"/></svg></i></div><b>42<small> /50</small></b><div class="bar"><span style="width:84%;background:var(--present)"></span></div></div>
+        <div class="tile glass"><div class="k">Came in late<i style="background:var(--late-t);color:var(--late)"><svg width="16" height="16"><use href="#clock"/></svg></i></div><b>5</b><div class="bar"><span style="width:10%;background:var(--late)"></span></div></div>
+        <div class="tile glass"><div class="k">On leave<i style="background:var(--leave-t);color:var(--leave)"><svg width="16" height="16"><use href="#palm"/></svg></i></div><b>2</b><div class="bar"><span style="width:4%;background:var(--leave)"></span></div></div>
+        <div class="tile glass"><div class="k">Not in yet<i style="background:var(--absent-t);color:var(--absent)"><svg width="16" height="16"><use href="#user"/></svg></i></div><b>1</b><div class="bar"><span style="width:2%;background:var(--absent)"></span></div></div>
+      </div>
+      <div class="cols">
+        <section class="panel glass">
+          <div class="ph"><h3>Live register</h3><div style="display:flex;gap:6px"><span class="chip on">Everyone <b>8</b></span><span class="chip">Late <b>1</b></span><span class="chip">Away <b>2</b></span></div></div>
+          <div class="tl">
+            <div class="axis n"><span></span><span class="hrs"><span style="left:0">8 AM</span><span style="left:16.67%">10</span><span style="left:33.33%">12</span><span style="left:50%">2 PM</span><span style="left:66.67%">4</span><span style="left:83.33%">6</span><span style="left:100%">8 PM</span></span><span style="text-align:right">In</span></div>
+            <div class="lanes" id="lanes"></div>
+          </div>
+          <div class="legend">
+            <span class="tag" style="background:var(--present-t);color:var(--present)">Present</span>
+            <span class="tag" style="background:var(--late-t);color:var(--late)">Late (hatched = late minutes)</span>
+            <span class="tag" style="background:var(--wfh-t);color:var(--wfh)">Work from home</span>
+            <span class="tag" style="background:var(--leave-t);color:var(--leave)">Leave / permission</span>
+            <span class="tag" style="background:var(--absent-t);color:var(--absent)">Not in</span>
+          </div>
+        </section>
+        <section class="panel glass wait">
+          <div class="ph"><h3>Waiting for you</h3><span class="chip">3</span></div>
+          <article class="req">
+            <div class="who"><span class="av sm" style="background:var(--leave-t);color:var(--leave)">KS</span><div><b>Karthik Selvam</b><small>Leave · 18 – 20 Nov</small></div></div>
+            <p>3 days casual leave. No one else from Creative is away.</p>
+            <div class="choice"><button class="no">Decline</button><button class="yes">Approve</button></div>
+          </article>
+          <article class="req">
+            <div class="who"><span class="av sm" style="background:var(--late-t);color:var(--late)">DS</span><div><b>Divya Sundar</b><small>Permission · today 4–6 PM</small></div></div>
+            <div class="choice"><button class="no">Decline</button><button class="yes">Approve</button></div>
+          </article>
+          <article class="req">
+            <div class="who"><span class="av sm" style="background:var(--wfh-t);color:var(--wfh)">MK</span><div><b>Meena Krishnan</b><small>Work from home · Fri 13 Nov</small></div></div>
+            <div class="choice"><button class="no">Decline</button><button class="yes">Approve</button></div>
+          </article>
+        </section>
+      </div>
+    </main>
+  </div>
+
+  <div class="notes">
+    <div class="glass"><b>Frosted glass on warm colour</b><p>Cards are see-through white with a blur, floating on soft butter, peach and mint light. Corners are big and round; buttons are pills.</p></div>
+    <div class="glass"><b>Black for actions, butter for "yes"</b><p>Black pill buttons for the main action and the selected tab, butter yellow for Approve and today. Attendance keeps its own colours.</p></div>
+    <div class="glass"><b>Your day as a strip</b><p>Shift window, time worked and a "now" dot on the phone; every person's strip stacked in HR's live register.</p></div>
+  </div>
+</div>
+
+<script>
+const root = document.documentElement;
+document.querySelectorAll(".seg button").forEach((b) => b.addEventListener("click", () => {
+  root.dataset.theme = b.dataset.t;
+  document.querySelectorAll(".seg button").forEach((x) => x.setAttribute("aria-pressed", String(x === b)));
+}));
+if (new URLSearchParams(location.search).get("theme") === "dark") document.querySelector('.seg button[data-t="dark"]').click();
+
+const S = 480, E = 1200, pct = (m) => ((m - S) / (E - S)) * 100;
+const NOW = 741, SH0 = 570, SH1 = 1110, GRACE = 15, t = (h, m) => h * 60 + m;
+const fmt = (m) => `${(Math.floor(m / 60) % 12) || 12}:${String(m % 60).padStart(2, "0")}`;
+const people = [
+  { n: "Anitha Raman", d: "Operations", in: t(9, 18), c: "#e9d5ff" },
+  { n: "Praveen Kumar", d: "Creative", in: t(9, 41), c: "#fde68a" },
+  { n: "Karthik Selvam", d: "Creative", in: t(10, 2), c: "#bae6fd" },
+  { n: "Lakshmi Narayanan", d: "Human Resources", in: t(9, 5), c: "#fecaca" },
+  { n: "Meena Krishnan", d: "Accounts", in: t(9, 26), wfh: true, c: "#bbf7d0" },
+  { n: "Divya Sundar", d: "Operations", in: t(9, 12), perm: [t(16, 0), t(18, 0)], c: "#fed7aa" },
+  { n: "Ravi Chandran", d: "Support", leave: "Casual leave", c: "#c7d2fe" },
+  { n: "Suresh Natarajan", d: "Support", absent: true, c: "#e5e7eb" },
+];
+const lanes = document.getElementById("lanes");
+lanes.innerHTML = people.map((p) => {
+  let inner = `<div class="win" style="left:${pct(SH0)}%;width:${pct(SH1) - pct(SH0)}%"></div>`, time = "–", cls = "t";
+  if (p.leave) inner += `<div class="soft" style="left:${pct(SH0)}%;width:${pct(SH1) - pct(SH0)}%;background:var(--leave-t)"></div><span class="note" style="left:${pct(SH0) + 2}%;color:var(--leave)">${p.leave}, all day</span>`;
+  else if (p.absent) inner += `<span class="note" style="left:${pct(SH0) + 2}%;color:var(--absent)">Not punched in · reminder sent 9:45</span>`;
+  else {
+    const late = p.in > SH0 + GRACE, col = p.wfh ? "var(--wfh)" : late ? "var(--late)" : "var(--present)";
+    if (late) inner += `<div class="lateseg" style="left:${pct(SH0)}%;width:${pct(p.in) - pct(SH0)}%"></div>`;
+    inner += `<div class="bar" style="left:${pct(p.in)}%;width:${pct(NOW) - pct(p.in)}%;background:${col}"></div>`;
+    if (p.perm) inner += `<div class="soft" style="left:${pct(p.perm[0])}%;width:${pct(p.perm[1]) - pct(p.perm[0])}%;background:var(--leave-t)"></div>`;
+    time = fmt(p.in); if (late) cls += " late";
+  }
+  const ini = p.n.split(" ").map((x) => x[0]).join("");
+  return `<div class="r"><div class="who"><span class="av sm" style="background:${p.c};color:#2b2416">${ini}</span><div style="min-width:0"><b>${p.n}</b><small>${p.d}</small></div></div><div class="lane">${inner}</div><div class="${cls} n">${time}</div></div>`;
+}).join("");
+const line = document.createElement("div"); line.className = "nowline"; lanes.appendChild(line);
+const place = () => { const a = lanes.querySelector(".lane").getBoundingClientRect(), L = lanes.getBoundingClientRect(); line.style.left = (a.left - L.left + a.width * pct(NOW) / 100 - 1) + "px"; };
+place(); addEventListener("resize", place);
+</script>
+</body>
+</html>

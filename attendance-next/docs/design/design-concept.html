@@ -1,0 +1,572 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Attendance Desk Concept</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+<style>
+:root {
+  --brand: #2f4fe6; --brand-600: #2440c8; --brand-50: #eef1ff; --brand-100: #dde3ff;
+  --mint: #5ee6b0; --mint-ink: #04563a;
+  --bg-1: #eef2ff; --bg-2: #f6f8fc;
+  --card: #ffffff; --card-2: #f5f7fc; --line: #e6e9f2;
+  --ink: #0f1733; --ink-2: #4a5372; --ink-3: #8a91a8;
+  --present: #12a150; --present-bg: #e5f7ec;
+  --late: #c27803; --late-bg: #fff3d6;
+  --absent: #dc2f3c; --absent-bg: #fde8ea;
+  --leave: #0e8f8f; --leave-bg: #dff5f4;
+  --wfh: #5b5bd6; --wfh-bg: #ecebff;
+  --shadow: 0 1px 2px rgba(16,24,64,.04), 0 8px 24px -8px rgba(16,24,64,.10);
+  --shadow-lg: 0 30px 60px -20px rgba(16,24,64,.35);
+  --frame: #0b0f1e;
+}
+:root[data-theme="dark"] {
+  --brand: #6b84ff; --brand-600: #8598ff; --brand-50: #1a2140; --brand-100: #232c55;
+  --mint: #3fd39a; --mint-ink: #032e1f;
+  --bg-1: #0b1020; --bg-2: #0e1428;
+  --card: #151b30; --card-2: #1b2240; --line: #262e4a;
+  --ink: #eef1fb; --ink-2: #b3bad3; --ink-3: #7d86a3;
+  --present: #3ccf7f; --present-bg: #10301f;
+  --late: #f2b544; --late-bg: #33280e;
+  --absent: #ff6b75; --absent-bg: #3a151a;
+  --leave: #39c6c3; --leave-bg: #0f2e2e;
+  --wfh: #9b9bff; --wfh-bg: #22224a;
+  --shadow: 0 1px 2px rgba(0,0,0,.3), 0 8px 24px -8px rgba(0,0,0,.5);
+  --frame: #000;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: "Plus Jakarta Sans", system-ui, sans-serif; color: var(--ink);
+  background: radial-gradient(1200px 600px at 80% -10%, var(--brand-100), transparent 60%), linear-gradient(180deg, var(--bg-1), var(--bg-2));
+  min-height: 100vh; -webkit-font-smoothing: antialiased;
+}
+.num { font-variant-numeric: tabular-nums; }
+button { font: inherit; cursor: pointer; border: 0; background: none; color: inherit; }
+
+/* ---------- page shell ---------- */
+.wrap { max-width: 1320px; margin: 0 auto; padding: 32px 24px 80px; }
+.topbar { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 36px; }
+.brandmark { display: flex; align-items: center; gap: 10px; font-weight: 800; }
+.logo { width: 34px; height: 34px; border-radius: 10px; background: var(--brand); color: #fff; display: grid; place-items: center; }
+.toggle { display: flex; background: var(--card); border: 1px solid var(--line); border-radius: 999px; padding: 4px; box-shadow: var(--shadow); }
+.toggle button { padding: 8px 14px; border-radius: 999px; font-size: 13px; font-weight: 600; color: var(--ink-2); }
+.toggle button[aria-pressed="true"] { background: var(--brand); color: #fff; }
+
+.hero { display: grid; grid-template-columns: 340px 1fr; gap: 40px; align-items: center; }
+.pill-tag { display: inline-flex; align-items: center; gap: 8px; font-size: 12px; font-weight: 700; color: var(--present); background: var(--present-bg); padding: 6px 12px; border-radius: 999px; }
+.pill-tag::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+h1 { font-size: 44px; line-height: 1.08; letter-spacing: -.03em; font-weight: 800; margin: 18px 0 14px; }
+h1 span { background: linear-gradient(90deg, var(--brand), #2aa7e0); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.lead { color: var(--ink-2); font-size: 15px; line-height: 1.6; }
+.features { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 22px; }
+.feat { display: inline-flex; align-items: center; gap: 8px; background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 9px 12px; font-size: 13px; font-weight: 600; box-shadow: var(--shadow); }
+.feat i { width: 8px; height: 8px; border-radius: 50%; background: var(--brand); }
+.palette { margin-top: 26px; display: flex; align-items: center; gap: 10px; font-size: 11px; font-weight: 700; letter-spacing: .12em; color: var(--ink-3); }
+.palette span { width: 22px; height: 22px; border-radius: 50%; margin-left: -6px; border: 2px solid var(--bg-2); }
+
+.phones { display: flex; gap: 28px; justify-content: center; align-items: flex-start; }
+.phones .phone:nth-child(2) { margin-top: 48px; }
+.phones .phone:nth-child(3) { margin-top: 96px; }
+
+/* ---------- phone ---------- */
+.phone { width: 300px; flex: none; border-radius: 46px; background: var(--frame); padding: 10px; box-shadow: var(--shadow-lg); }
+.screen { position: relative; height: 640px; border-radius: 37px; overflow: hidden; background: linear-gradient(180deg, var(--bg-1), var(--bg-2) 40%); display: flex; flex-direction: column; }
+.status { display: flex; justify-content: space-between; align-items: center; padding: 12px 24px 4px; font-size: 12px; font-weight: 700; }
+.island { position: absolute; top: 9px; left: 50%; transform: translateX(-50%); width: 92px; height: 26px; background: #000; border-radius: 20px; }
+.scroll { flex: 1; overflow: hidden; padding: 6px 14px 0; }
+.apphead { display: flex; align-items: center; gap: 10px; padding: 6px 0 12px; }
+.apphead .logo { width: 30px; height: 30px; border-radius: 9px; }
+.apphead small { display: block; font-size: 10px; color: var(--ink-3); font-weight: 600; }
+.apphead b { font-size: 16px; }
+.apphead .end { margin-left: auto; display: flex; align-items: center; gap: 10px; }
+.bell { position: relative; width: 32px; height: 32px; border-radius: 50%; display: grid; place-items: center; color: var(--ink-2); }
+.bell::after { content: ""; position: absolute; top: 6px; right: 7px; width: 7px; height: 7px; border-radius: 50%; background: var(--absent); border: 2px solid var(--bg-1); }
+.av { width: 30px; height: 30px; border-radius: 50%; display: grid; place-items: center; font-size: 11px; font-weight: 800; color: #fff; flex: none; }
+.greet { display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; margin-bottom: 12px; }
+.greet h2 { font-size: 16px; letter-spacing: -.02em; }
+.greet p { font-size: 11px; color: var(--ink-3); margin-top: 2px; font-weight: 500; }
+.datechip { display: inline-flex; align-items: center; gap: 5px; font-size: 10px; font-weight: 700; background: var(--card); border: 1px solid var(--line); padding: 5px 8px; border-radius: 8px; white-space: nowrap; }
+
+.card { background: var(--card); border: 1px solid var(--line); border-radius: 20px; box-shadow: var(--shadow); padding: 14px; }
+.chip { display: inline-flex; align-items: center; gap: 5px; font-size: 10px; font-weight: 700; padding: 4px 8px; border-radius: 999px; white-space: nowrap; }
+.chip::before { content: ""; width: 5px; height: 5px; border-radius: 50%; background: currentColor; }
+.chip.noDot::before { display: none; }
+.c-present { color: var(--present); background: var(--present-bg); }
+.c-late { color: var(--late); background: var(--late-bg); }
+.c-absent { color: var(--absent); background: var(--absent-bg); }
+.c-leave { color: var(--leave); background: var(--leave-bg); }
+.c-wfh { color: var(--wfh); background: var(--wfh-bg); }
+.c-brand { color: var(--brand); background: var(--brand-50); }
+
+.shift { display: grid; grid-template-columns: 1fr auto; gap: 8px; align-items: center; margin-top: 12px; }
+.label { font-size: 9.5px; font-weight: 800; letter-spacing: .1em; color: var(--ink-3); text-transform: uppercase; }
+.timer { font-size: 34px; font-weight: 800; letter-spacing: -.02em; line-height: 1.1; }
+.timer small { font-size: 13px; color: var(--ink-3); font-weight: 600; }
+.sub { font-size: 11px; color: var(--ink-2); line-height: 1.5; }
+.ring { width: 70px; height: 70px; position: relative; }
+.ring svg { transform: rotate(-90deg); }
+.ring div { position: absolute; inset: 0; display: grid; place-items: center; text-align: center; font-size: 13px; font-weight: 800; line-height: 1; }
+.ring div small { display: block; font-size: 8px; color: var(--ink-3); font-weight: 700; margin-top: 2px; }
+.btnrow { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 14px; }
+.btn { height: 42px; border-radius: 13px; font-size: 12.5px; font-weight: 700; display: inline-flex; align-items: center; justify-content: center; gap: 6px; transition: transform .12s, filter .12s; }
+.btn:active { transform: scale(.97); }
+.btn-soft { background: var(--brand-50); color: var(--brand); }
+.btn-brand { background: var(--brand); color: #fff; box-shadow: 0 8px 18px -8px var(--brand); }
+.btn-mint { background: var(--mint); color: var(--mint-ink); }
+.btn-ghost { background: var(--card-2); color: var(--ink-2); border: 1px solid var(--line); }
+.loc { display: flex; align-items: center; gap: 5px; font-size: 10px; color: var(--ink-2); font-weight: 600; }
+
+.sec { display: flex; justify-content: space-between; align-items: baseline; margin: 16px 2px 8px; }
+.sec h3 { font-size: 14px; letter-spacing: -.01em; }
+.sec a { font-size: 11px; color: var(--brand); font-weight: 700; text-decoration: none; }
+.qa { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.qa div { background: var(--card); border: 1px solid var(--line); border-radius: 16px; padding: 9px 4px 8px; text-align: center; font-size: 10.5px; font-weight: 600; color: var(--ink-2); box-shadow: var(--shadow); }
+.qa .ic { width: 34px; height: 34px; border-radius: 11px; display: grid; place-items: center; margin: 0 auto 6px; background: var(--brand-50); color: var(--brand); }
+.stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.stat { background: var(--card); border: 1px solid var(--line); border-radius: 16px; padding: 10px; box-shadow: var(--shadow); }
+.stat b { display: block; font-size: 20px; margin: 2px 0; }
+.stat span { font-size: 10px; color: var(--ink-3); font-weight: 600; }
+
+.tabs { display: grid; grid-template-columns: repeat(5, 1fr); padding: 8px 8px 18px; background: var(--card); border-top: 1px solid var(--line); }
+.tabs div { display: flex; flex-direction: column; align-items: center; gap: 3px; font-size: 9.5px; font-weight: 600; color: var(--ink-3); }
+.tabs div span { width: 44px; height: 26px; border-radius: 999px; display: grid; place-items: center; }
+.tabs .on { color: var(--brand); }
+.tabs .on span { background: var(--brand-50); }
+
+/* team */
+.bar { display: flex; height: 10px; border-radius: 999px; overflow: hidden; gap: 2px; margin: 10px 0 6px; }
+.bar i { display: block; }
+.tiles { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; margin-top: 10px; }
+.tile { border-radius: 12px; padding: 8px 7px; }
+.tile b { display: block; font-size: 17px; color: var(--ink); }
+.tile b small { font-size: 10px; color: var(--ink-3); }
+.tile span { font-size: 9.5px; font-weight: 700; }
+.appr { margin-bottom: 10px; }
+.appr .who { display: flex; align-items: center; gap: 9px; }
+.appr .who b { font-size: 13px; }
+.appr .who small { display: block; font-size: 10px; color: var(--ink-3); font-weight: 500; }
+.appr .who .chip { margin-left: auto; }
+.req { background: var(--card-2); border-radius: 13px; padding: 10px; margin: 10px 0; display: flex; justify-content: space-between; gap: 8px; }
+.req b { font-size: 12px; display: block; }
+.req small { font-size: 10px; color: var(--ink-2); }
+.req .right { text-align: right; font-size: 10px; font-weight: 700; color: var(--present); }
+.appr .btnrow { margin-top: 0; }
+.appr .btn { height: 38px; }
+
+/* calendar */
+.monthsw { display: flex; align-items: center; justify-content: space-between; background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 6px; box-shadow: var(--shadow); }
+.monthsw button { width: 30px; height: 30px; border-radius: 10px; background: var(--card-2); display: grid; place-items: center; color: var(--ink-2); }
+.monthsw b { font-size: 13px; }
+.cal { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; margin-top: 10px; text-align: center; }
+.cal .h { font-size: 9px; font-weight: 800; color: var(--ink-3); padding: 2px 0; }
+.cal .d { aspect-ratio: 1; border-radius: 10px; font-size: 11px; font-weight: 700; display: grid; place-items: center; position: relative; }
+.cal .d.sel { outline: 2px solid var(--brand); outline-offset: 1px; }
+.cal .d.today::after { content: ""; position: absolute; bottom: 3px; width: 4px; height: 4px; border-radius: 50%; background: var(--brand); }
+.cal .d.off { color: var(--ink-3); }
+.legend { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+.punches { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 6px; margin-top: 10px; }
+.punches div { background: var(--card-2); border-radius: 12px; padding: 8px; }
+.punches b { display: block; font-size: 14px; margin-top: 2px; }
+
+/* ---------- desktop ---------- */
+.deskwrap { margin-top: 90px; }
+.deskhead { text-align: center; margin-bottom: 26px; }
+.deskhead h2 { font-size: 28px; letter-spacing: -.02em; }
+.deskhead p { color: var(--ink-2); margin-top: 6px; font-size: 14px; }
+.desk { border-radius: 18px; overflow: hidden; background: var(--card); border: 1px solid var(--line); box-shadow: var(--shadow-lg); }
+.chrome { height: 36px; background: var(--card-2); border-bottom: 1px solid var(--line); display: flex; align-items: center; gap: 6px; padding: 0 14px; }
+.chrome i { width: 10px; height: 10px; border-radius: 50%; background: var(--line); }
+.chrome span { margin-left: 16px; font-size: 11px; color: var(--ink-3); background: var(--card); border: 1px solid var(--line); padding: 3px 12px; border-radius: 8px; }
+.app { display: grid; grid-template-columns: 228px 1fr; min-height: 640px; }
+.side { border-right: 1px solid var(--line); padding: 18px 14px; display: flex; flex-direction: column; gap: 2px; }
+.side .brandmark { padding: 0 8px 18px; font-size: 15px; }
+.side .grp { font-size: 10px; font-weight: 800; letter-spacing: .1em; color: var(--ink-3); padding: 14px 10px 6px; }
+.nav { display: flex; align-items: center; gap: 10px; padding: 9px 10px; border-radius: 11px; font-size: 13px; font-weight: 600; color: var(--ink-2); }
+.nav.on { background: var(--brand-50); color: var(--brand); }
+.nav em { margin-left: auto; font-style: normal; font-size: 10px; font-weight: 800; background: var(--absent); color: #fff; border-radius: 999px; padding: 1px 7px; }
+.side .me { margin-top: auto; display: flex; align-items: center; gap: 10px; padding: 10px; border-radius: 14px; background: var(--card-2); font-size: 12px; }
+.side .me small { display: block; color: var(--ink-3); font-size: 10.5px; }
+.main { background: linear-gradient(180deg, var(--bg-1), var(--bg-2) 30%); padding: 22px 26px; }
+.mtop { display: flex; align-items: center; gap: 12px; }
+.mtop h3 { font-size: 22px; letter-spacing: -.02em; }
+.mtop p { font-size: 12px; color: var(--ink-3); margin-top: 2px; }
+.search { margin-left: auto; width: 260px; height: 38px; border-radius: 12px; background: var(--card); border: 1px solid var(--line); display: flex; align-items: center; gap: 8px; padding: 0 12px; font-size: 12px; color: var(--ink-3); }
+.kpis { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-top: 18px; }
+.kpi { padding: 16px; }
+.kpi .top { display: flex; justify-content: space-between; align-items: center; }
+.kpi .ic { width: 34px; height: 34px; border-radius: 11px; display: grid; place-items: center; }
+.kpi b { display: block; font-size: 28px; letter-spacing: -.02em; margin-top: 10px; }
+.kpi b small { font-size: 14px; color: var(--ink-3); }
+.kpi span { font-size: 12px; color: var(--ink-2); font-weight: 600; }
+.grid2 { display: grid; grid-template-columns: 1.55fr 1fr; gap: 14px; margin-top: 14px; }
+.card h4 { font-size: 14px; display: flex; align-items: center; gap: 8px; }
+.card h4 a { margin-left: auto; font-size: 11.5px; color: var(--brand); text-decoration: none; }
+table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 12.5px; }
+th { text-align: left; font-size: 10px; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-3); font-weight: 800; padding: 8px 10px; border-bottom: 1px solid var(--line); }
+td { padding: 10px; border-bottom: 1px solid var(--line); }
+tr:last-child td { border-bottom: 0; }
+td .who { display: flex; align-items: center; gap: 9px; font-weight: 700; }
+td .who small { display: block; font-weight: 500; color: var(--ink-3); font-size: 10.5px; }
+td.mono { font-variant-numeric: tabular-nums; color: var(--ink-2); }
+td .late { color: var(--late); font-weight: 700; }
+.mini { display: flex; gap: 8px; align-items: center; padding: 10px 0; border-bottom: 1px solid var(--line); }
+.mini:last-child { border-bottom: 0; }
+.mini .t { flex: 1; font-size: 12px; }
+.mini .t b { display: block; font-size: 12.5px; }
+.mini .t small { color: var(--ink-3); }
+.mini .btn { height: 32px; padding: 0 12px; border-radius: 10px; font-size: 11.5px; }
+.week { display: flex; align-items: flex-end; gap: 10px; height: 110px; margin-top: 14px; }
+.week div { flex: 1; display: flex; flex-direction: column; justify-content: flex-end; align-items: center; gap: 6px; height: 100%; font-size: 10px; color: var(--ink-3); font-weight: 700; }
+.week i { width: 100%; max-width: 26px; border-radius: 8px 8px 4px 4px; background: var(--brand-100); display: block; }
+.week .on i { background: var(--brand); }
+
+.notes { margin-top: 48px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+.notes .card { padding: 18px; }
+.notes b { font-size: 14px; }
+.notes p { font-size: 13px; color: var(--ink-2); margin-top: 6px; line-height: 1.55; }
+
+@media (max-width: 1180px) {
+  .hero { grid-template-columns: 1fr; }
+  .phones { flex-wrap: wrap; }
+  .phones .phone:nth-child(n) { margin-top: 0; }
+}
+@media (max-width: 900px) {
+  .app { grid-template-columns: 1fr; } .side { display: none; }
+  .kpis { grid-template-columns: repeat(2, 1fr); } .grid2, .notes { grid-template-columns: 1fr; }
+  .search { display: none; } .desk { overflow-x: auto; }
+}
+@media (max-width: 480px) {
+  .wrap { padding: 20px 16px 60px; } h1 { font-size: 34px; }
+  .phone { width: 100%; max-width: 320px; }
+}
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute">
+  <defs>
+    <symbol id="i-bell" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></symbol>
+    <symbol id="i-home" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 10 9-7 9 7v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></symbol>
+    <symbol id="i-cal" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="3"/><path d="M16 2v4M8 2v4M3 10h18"/></symbol>
+    <symbol id="i-inbox" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-6l-2 3h-4l-2-3H2"/><path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/></symbol>
+    <symbol id="i-note" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M8 13h8M8 17h5"/></symbol>
+    <symbol id="i-menu" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="5" cy="12" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="19" cy="12" r="1.5"/></symbol>
+    <symbol id="i-clock" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></symbol>
+    <symbol id="i-plane" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.8 19.2 16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.5-.1 1 .3 1.3L9 12l-2 3H4l-1 1 3 2 2 3 1-1v-3l3-2 3.5 5.3c.3.4.8.5 1.3.3l.5-.2c.4-.3.6-.7.5-1.2z"/></symbol>
+    <symbol id="i-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></symbol>
+    <symbol id="i-mega" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 11 18-5v12L3 14v-3z"/><path d="M11.6 16.8a3 3 0 1 1-5.8-1.6"/></symbol>
+    <symbol id="i-users" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></symbol>
+    <symbol id="i-chart" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 3v18h18"/><path d="M7 15v2M12 10v7M17 6v11"/></symbol>
+    <symbol id="i-cog" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></symbol>
+    <symbol id="i-out" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"/></symbol>
+    <symbol id="i-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></symbol>
+    <symbol id="i-x" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></symbol>
+    <symbol id="i-wifi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M5 12.55a11 11 0 0 1 14 0M8.5 16.4a6 6 0 0 1 7 0M12 20h.01M2 8.82a15 15 0 0 1 20 0"/></symbol>
+    <symbol id="i-left" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="m15 18-6-6 6-6"/></symbol>
+    <symbol id="i-right" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="m9 18 6-6-6-6"/></symbol>
+    <symbol id="i-search" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></symbol>
+    <symbol id="i-cake" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-8a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8M4 16s.5-1 2-1 2.5 2 4 2 2.5-2 4-2 2.5 2 4 2 2-1 2-1M2 21h20M7 8v3M12 8v3M17 8v3M7 4h.01M12 4h.01M17 4h.01"/></symbol>
+  </defs>
+</svg>
+
+<div class="wrap">
+  <div class="topbar">
+    <div class="brandmark"><div class="logo"><svg width="18" height="18"><use href="#i-clock"/></svg></div>Attendance Desk · design concept</div>
+    <div class="toggle" role="group" aria-label="Theme">
+      <button data-t="light" aria-pressed="true">Light</button>
+      <button data-t="dark" aria-pressed="false">Dark</button>
+    </div>
+  </div>
+
+  <section class="hero">
+    <div>
+      <span class="pill-tag">Enterprise redesign · v2</span>
+      <h1>Attendance,<br /><span>clear at a glance.</span></h1>
+      <p class="lead">Punch in, track the shift live, request leave or permission, and approve the team's requests in one tap. Built for phones first, with the same look on the HR desktop.</p>
+      <div class="features">
+        <span class="feat"><i></i>Live shift timer</span>
+        <span class="feat"><i style="background:var(--mint)"></i>One-tap approvals</span>
+        <span class="feat"><i style="background:var(--leave)"></i>Team pulse</span>
+        <span class="feat"><i style="background:var(--late)"></i>Colour-coded calendar</span>
+      </div>
+      <div class="palette">PALETTE
+        <span style="background:#0f1733;margin-left:6px"></span><span style="background:var(--brand)"></span><span style="background:#2aa7e0"></span><span style="background:var(--mint)"></span><span style="background:#eef2ff"></span>
+      </div>
+    </div>
+
+    <div class="phones">
+      <!-- ============ PHONE 1 · HOME ============ -->
+      <div class="phone"><div class="screen">
+        <div class="island"></div>
+        <div class="status"><span class="num">9:41</span><span>●●● ▮</span></div>
+        <div class="scroll">
+          <div class="apphead">
+            <div class="logo"><svg width="16" height="16"><use href="#i-clock"/></svg></div>
+            <div><small>Attendance</small><b>Home</b></div>
+            <div class="end"><span class="bell"><svg width="17" height="17"><use href="#i-bell"/></svg></span><span class="av" style="background:#e0699a">PS</span></div>
+          </div>
+          <div class="greet">
+            <div><h2>Good morning, Priya 👋</h2><p>UI Designer · Coimbatore office</p></div>
+            <span class="datechip"><svg width="11" height="11"><use href="#i-cal"/></svg>Thu, 12 Nov</span>
+          </div>
+
+          <div class="card">
+            <div style="display:flex;justify-content:space-between;align-items:center">
+              <span class="chip c-present">Punched in at 09:04 AM</span>
+              <span class="loc"><svg width="12" height="12"><use href="#i-wifi"/></svg>Office</span>
+            </div>
+            <div class="shift">
+              <div>
+                <div class="label">Shift time</div>
+                <div class="timer num"><span id="hh">04</span>:<span id="mm">32</span> <small>hrs</small></div>
+                <div class="sub">Shift 9:00 AM – 6:00 PM<br />Target 8h 00m</div>
+              </div>
+              <div class="ring">
+                <svg width="70" height="70"><circle cx="35" cy="35" r="29" fill="none" stroke="var(--brand-50)" stroke-width="7"/><circle id="ringArc" cx="35" cy="35" r="29" fill="none" stroke="var(--brand)" stroke-width="7" stroke-linecap="round" stroke-dasharray="182.2" stroke-dashoffset="80"/></svg>
+                <div class="num"><span><span id="pct">56</span>%<small>OF SHIFT</small></span></div>
+              </div>
+            </div>
+            <div class="btnrow">
+              <button class="btn btn-soft"><svg width="14" height="14"><use href="#i-note"/></svg>Daily report</button>
+              <button class="btn btn-brand"><svg width="14" height="14"><use href="#i-out"/></svg>Punch out</button>
+            </div>
+          </div>
+
+          <div class="sec"><h3>Quick actions</h3><a href="#">See all</a></div>
+          <div class="qa">
+            <div><span class="ic"><svg width="17" height="17"><use href="#i-plane"/></svg></span>Leave</div>
+            <div><span class="ic" style="background:var(--late-bg);color:var(--late)"><svg width="17" height="17"><use href="#i-clock"/></svg></span>Permission</div>
+            <div><span class="ic" style="background:var(--leave-bg);color:var(--leave)"><svg width="17" height="17"><use href="#i-note"/></svg></span>Daily report</div>
+          </div>
+
+          <div class="sec"><h3>This month</h3><a href="#">Calendar</a></div>
+          <div class="stats">
+            <div class="stat"><span>Present</span><b class="num" style="color:var(--present)">8</b><span>of 9 days</span></div>
+            <div class="stat"><span>Late</span><b class="num" style="color:var(--late)">1</b><span>9:18 AM</span></div>
+            <div class="stat"><span>Leave</span><b class="num" style="color:var(--leave)">0</b><span>days</span></div>
+          </div>
+        </div>
+        <nav class="tabs">
+          <div class="on"><span><svg width="18" height="18"><use href="#i-home"/></svg></span>Home</div>
+          <div><span><svg width="18" height="18"><use href="#i-cal"/></svg></span>Calendar</div>
+          <div><span><svg width="18" height="18"><use href="#i-inbox"/></svg></span>Requests</div>
+          <div><span><svg width="18" height="18"><use href="#i-note"/></svg></span>Reports</div>
+          <div><span><svg width="18" height="18"><use href="#i-menu"/></svg></span>More</div>
+        </nav>
+      </div></div>
+
+      <!-- ============ PHONE 2 · TEAM & APPROVALS ============ -->
+      <div class="phone"><div class="screen">
+        <div class="island"></div>
+        <div class="status"><span class="num">9:41</span><span>●●● ▮</span></div>
+        <div class="scroll">
+          <div class="apphead">
+            <div class="logo"><svg width="16" height="16"><use href="#i-users"/></svg></div>
+            <div><small>Attendance</small><b>Approvals</b></div>
+            <div class="end"><span class="bell"><svg width="17" height="17"><use href="#i-bell"/></svg></span><span class="av" style="background:#4f6bed">AK</span></div>
+          </div>
+          <div class="greet">
+            <div><h2 style="font-size:16px">Design &amp; Operations</h2><p>14 members · today</p></div>
+            <span class="datechip">Today · 12 Nov</span>
+          </div>
+
+          <div class="card">
+            <div style="display:flex;justify-content:space-between;align-items:center">
+              <span class="label" style="color:var(--ink)">Attendance breakdown</span>
+              <span style="font-size:10px;font-weight:700;color:var(--brand)">86% on time</span>
+            </div>
+            <div class="bar">
+              <i style="flex:9;background:var(--present)"></i><i style="flex:2;background:var(--late)"></i><i style="flex:2;background:var(--leave)"></i><i style="flex:1;background:var(--absent)"></i>
+            </div>
+            <div class="tiles">
+              <div class="tile c-present"><span>Present</span><b class="num">9<small>/14</small></b></div>
+              <div class="tile c-late"><span>Late</span><b class="num">2</b></div>
+              <div class="tile c-leave"><span>Leave</span><b class="num">2</b></div>
+              <div class="tile c-absent"><span>Absent</span><b class="num">1</b></div>
+            </div>
+          </div>
+
+          <div class="sec"><h3>Pending approvals <span class="chip c-absent noDot" style="margin-left:4px">2 new</span></h3><a href="#">View all</a></div>
+          <div class="card appr">
+            <div class="who"><span class="av" style="background:#1f9d8f">KR</span><div><b>Karthik R</b><small>Frontend · 2h ago</small></div><span class="chip c-leave noDot">Leave</span></div>
+            <div class="req"><div><b>Casual leave · 3 days</b><small>18 – 20 Nov (Wed – Fri)</small></div><div class="right">No team<br />overlap</div></div>
+            <div class="btnrow"><button class="btn btn-ghost"><svg width="13" height="13"><use href="#i-x"/></svg>Decline</button><button class="btn btn-mint"><svg width="13" height="13"><use href="#i-check"/></svg>Approve</button></div>
+          </div>
+          <div class="card appr">
+            <div class="who"><span class="av" style="background:#c46a1d">DS</span><div><b>Divya S</b><small>Accounts · 40m ago</small></div><span class="chip c-late noDot">Permission</span></div>
+            <div class="req"><div><b>2 hours · Today</b><small>4:00 PM – 6:00 PM · Bank work</small></div></div>
+            <div class="btnrow"><button class="btn btn-ghost"><svg width="13" height="13"><use href="#i-x"/></svg>Decline</button><button class="btn btn-mint"><svg width="13" height="13"><use href="#i-check"/></svg>Approve</button></div>
+          </div>
+        </div>
+        <nav class="tabs">
+          <div><span><svg width="18" height="18"><use href="#i-home"/></svg></span>Home</div>
+          <div class="on"><span><svg width="18" height="18"><use href="#i-users"/></svg></span>Team</div>
+          <div><span><svg width="18" height="18"><use href="#i-inbox"/></svg></span>Requests</div>
+          <div><span><svg width="18" height="18"><use href="#i-chart"/></svg></span>Reports</div>
+          <div><span><svg width="18" height="18"><use href="#i-menu"/></svg></span>More</div>
+        </nav>
+      </div></div>
+
+      <!-- ============ PHONE 3 · CALENDAR ============ -->
+      <div class="phone"><div class="screen">
+        <div class="island"></div>
+        <div class="status"><span class="num">9:41</span><span>●●● ▮</span></div>
+        <div class="scroll">
+          <div class="apphead">
+            <div class="logo"><svg width="16" height="16"><use href="#i-cal"/></svg></div>
+            <div><small>Attendance</small><b>My calendar</b></div>
+            <div class="end"><span class="av" style="background:#e0699a">PS</span></div>
+          </div>
+          <div class="monthsw">
+            <button aria-label="Previous month"><svg width="14" height="14"><use href="#i-left"/></svg></button>
+            <b>November 2026</b>
+            <button aria-label="Next month"><svg width="14" height="14"><use href="#i-right"/></svg></button>
+          </div>
+          <div class="card" style="margin-top:10px;padding:10px">
+            <div class="cal" id="cal"></div>
+          </div>
+          <div class="legend">
+            <span class="chip c-present">Present</span><span class="chip c-late">Late</span><span class="chip c-leave">Leave</span><span class="chip c-absent">Absent</span><span class="chip c-brand">Holiday</span>
+          </div>
+          <div class="card" style="margin-top:10px">
+            <div style="display:flex;justify-content:space-between;align-items:center">
+              <b style="font-size:13px">Tue, 10 Nov</b><span class="chip c-late">Late · 18 min</span>
+            </div>
+            <div class="punches num">
+              <div><span class="label">In</span><b style="color:var(--late)">9:18</b></div>
+              <div><span class="label">Out</span><b>6:22</b></div>
+              <div><span class="label">Worked</span><b>9h 04m</b></div>
+            </div>
+          </div>
+        </div>
+        <nav class="tabs">
+          <div><span><svg width="18" height="18"><use href="#i-home"/></svg></span>Home</div>
+          <div class="on"><span><svg width="18" height="18"><use href="#i-cal"/></svg></span>Calendar</div>
+          <div><span><svg width="18" height="18"><use href="#i-inbox"/></svg></span>Requests</div>
+          <div><span><svg width="18" height="18"><use href="#i-note"/></svg></span>Reports</div>
+          <div><span><svg width="18" height="18"><use href="#i-menu"/></svg></span>More</div>
+        </nav>
+      </div></div>
+    </div>
+  </section>
+
+  <!-- ============ DESKTOP ============ -->
+  <section class="deskwrap">
+    <div class="deskhead"><h2>HR desktop, same design language</h2><p>Dashboard for HR / Admin: today's numbers, approvals and the live register.</p></div>
+    <div class="desk">
+      <div class="chrome"><i></i><i></i><i></i><span>localhost:6001/dashboard</span></div>
+      <div class="app">
+        <aside class="side">
+          <div class="brandmark"><div class="logo"><svg width="16" height="16"><use href="#i-clock"/></svg></div>Attendance</div>
+          <div class="nav on"><svg width="17" height="17"><use href="#i-home"/></svg>Dashboard</div>
+          <div class="nav"><svg width="17" height="17"><use href="#i-cal"/></svg>Register</div>
+          <div class="nav"><svg width="17" height="17"><use href="#i-inbox"/></svg>Requests<em>5</em></div>
+          <div class="nav"><svg width="17" height="17"><use href="#i-note"/></svg>Daily reports</div>
+          <div class="grp">MANAGE</div>
+          <div class="nav"><svg width="17" height="17"><use href="#i-users"/></svg>Employees</div>
+          <div class="nav"><svg width="17" height="17"><use href="#i-sun"/></svg>Holidays</div>
+          <div class="nav"><svg width="17" height="17"><use href="#i-mega"/></svg>Announcements</div>
+          <div class="nav"><svg width="17" height="17"><use href="#i-chart"/></svg>Reports</div>
+          <div class="nav"><svg width="17" height="17"><use href="#i-cog"/></svg>Settings</div>
+          <div class="me"><span class="av" style="background:#4f6bed">AK</span><div><b>Anitha K</b><small>HR Manager</small></div></div>
+        </aside>
+        <div class="main">
+          <div class="mtop">
+            <div><h3>Good morning, Anitha</h3><p>Thursday, 12 November 2026 · Coimbatore</p></div>
+            <div class="search"><svg width="14" height="14"><use href="#i-search"/></svg>Search employees, requests…</div>
+            <span class="bell" style="background:var(--card);border:1px solid var(--line)"><svg width="16" height="16"><use href="#i-bell"/></svg></span>
+          </div>
+
+          <div class="kpis">
+            <div class="card kpi"><div class="top"><span>Present today</span><span class="ic c-present"><svg width="16" height="16"><use href="#i-check"/></svg></span></div><b class="num">42<small> / 50</small></b><span class="chip c-present noDot">84% · ▲ 4% vs last Thu</span></div>
+            <div class="card kpi"><div class="top"><span>Late</span><span class="ic c-late"><svg width="16" height="16"><use href="#i-clock"/></svg></span></div><b class="num">5</b><span class="chip c-late noDot">Avg 14 min late</span></div>
+            <div class="card kpi"><div class="top"><span>On leave</span><span class="ic c-leave"><svg width="16" height="16"><use href="#i-plane"/></svg></span></div><b class="num">2</b><span class="chip c-leave noDot">1 permission today</span></div>
+            <div class="card kpi"><div class="top"><span>Not punched in</span><span class="ic c-absent"><svg width="16" height="16"><use href="#i-x"/></svg></span></div><b class="num">1</b><span class="chip c-absent noDot">Reminder sent 9:30</span></div>
+          </div>
+
+          <div class="grid2">
+            <div class="card">
+              <h4>Today's register <span class="chip c-brand noDot">Live</span><a href="#">Open register →</a></h4>
+              <table>
+                <thead><tr><th>Employee</th><th>Status</th><th>In</th><th>Out</th><th>Worked</th></tr></thead>
+                <tbody>
+                  <tr><td><div class="who"><span class="av" style="background:#e0699a">PS</span><div>Priya S<small>Design</small></div></div></td><td><span class="chip c-present">Present</span></td><td class="mono">9:04</td><td class="mono">–</td><td class="mono">4h 32m</td></tr>
+                  <tr><td><div class="who"><span class="av" style="background:#1f9d8f">KR</span><div>Karthik R<small>Frontend</small></div></div></td><td><span class="chip c-late">Late</span></td><td class="mono"><span class="late">9:21</span></td><td class="mono">–</td><td class="mono">4h 15m</td></tr>
+                  <tr><td><div class="who"><span class="av" style="background:#7a5af5">MV</span><div>Meena V<small>Sales</small></div></div></td><td><span class="chip c-wfh">WFH</span></td><td class="mono">8:58</td><td class="mono">–</td><td class="mono">4h 38m</td></tr>
+                  <tr><td><div class="who"><span class="av" style="background:#c46a1d">DS</span><div>Divya S<small>Accounts</small></div></div></td><td><span class="chip c-leave">Permission</span></td><td class="mono">9:00</td><td class="mono">–</td><td class="mono">4h 36m</td></tr>
+                  <tr><td><div class="who"><span class="av" style="background:#64748b">SN</span><div>Suresh N<small>Support</small></div></div></td><td><span class="chip c-absent">Not in yet</span></td><td class="mono">–</td><td class="mono">–</td><td class="mono">–</td></tr>
+                </tbody>
+              </table>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:14px">
+              <div class="card">
+                <h4>Pending approvals <span class="chip c-absent noDot">5</span><a href="#">All →</a></h4>
+                <div class="mini"><span class="av" style="background:#1f9d8f">KR</span><div class="t"><b>Karthik R · Leave</b><small>18 – 20 Nov · 3 days</small></div><button class="btn btn-ghost" aria-label="Decline"><svg width="12" height="12"><use href="#i-x"/></svg></button><button class="btn btn-mint">Approve</button></div>
+                <div class="mini"><span class="av" style="background:#c46a1d">DS</span><div class="t"><b>Divya S · Permission</b><small>Today 4–6 PM</small></div><button class="btn btn-ghost" aria-label="Decline"><svg width="12" height="12"><use href="#i-x"/></svg></button><button class="btn btn-mint">Approve</button></div>
+                <div class="mini"><span class="av" style="background:#7a5af5">MV</span><div class="t"><b>Meena V · Work from home</b><small>13 Nov · 1 day</small></div><button class="btn btn-ghost" aria-label="Decline"><svg width="12" height="12"><use href="#i-x"/></svg></button><button class="btn btn-mint">Approve</button></div>
+              </div>
+              <div class="card">
+                <h4>On-time this week</h4>
+                <div class="week num">
+                  <div><i style="height:78%"></i>Mon</div><div><i style="height:88%"></i>Tue</div><div><i style="height:70%"></i>Wed</div><div class="on"><i style="height:84%"></i>Thu</div><div><i style="height:6%"></i>Fri</div><div><i style="height:6%"></i>Sat</div>
+                </div>
+              </div>
+              <div class="card" style="display:flex;align-items:center;gap:12px">
+                <span class="ic" style="width:38px;height:38px;border-radius:12px;display:grid;place-items:center;background:var(--late-bg);color:var(--late)"><svg width="18" height="18"><use href="#i-cake"/></svg></span>
+                <div style="font-size:12.5px"><b>Birthday today: Meena V</b><div style="color:var(--ink-3);font-size:11.5px">and Suresh N's 3-year work anniversary</div></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="notes">
+    <div class="card"><b>1 · Soft blue canvas</b><p>Light blue-grey background, white rounded cards (20px) with a soft shadow. Royal blue for main actions, mint green for Approve.</p></div>
+    <div class="card"><b>2 · Status colours never change</b><p>Green Present, amber Late, teal Leave/Permission, red Absent, violet WFH, the same in chips, calendar and tables.</p></div>
+    <div class="card"><b>3 · Big, thumb-friendly</b><p>44px+ buttons, a live shift timer with a progress ring, quick actions as tiles, and a bottom tab bar on phones.</p></div>
+  </section>
+</div>
+
+<script>
+// Theme toggle (+ ?theme=dark)
+const root = document.documentElement;
+function setTheme(t) {
+  root.dataset.theme = t;
+  document.querySelectorAll(".toggle button").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.t === t)));
+}
+document.querySelectorAll(".toggle button").forEach((b) => b.addEventListener("click", () => setTheme(b.dataset.t)));
+const q = new URLSearchParams(location.search).get("theme");
+if (q === "dark") setTheme("dark");
+
+// Live shift timer since 9:04 AM (demo starts at 4h 32m and keeps ticking)
+const start = Date.now() - (4 * 60 + 32) * 60000;
+function tick() {
+  const mins = Math.floor((Date.now() - start) / 60000);
+  document.getElementById("hh").textContent = String(Math.floor(mins / 60)).padStart(2, "0");
+  document.getElementById("mm").textContent = String(mins % 60).padStart(2, "0");
+  const pct = Math.min(100, Math.round((mins / 480) * 100));
+  document.getElementById("pct").textContent = pct;
+  document.getElementById("ringArc").setAttribute("stroke-dashoffset", String(182.2 * (1 - pct / 100)));
+}
+tick(); setInterval(tick, 15000);
+
+// Calendar: November 2026 starts on a Sunday
+const cal = document.getElementById("cal");
+["S", "M", "T", "W", "T", "F", "S"].forEach((d) => cal.insertAdjacentHTML("beforeend", `<div class="h">${d}</div>`));
+const status = { 2: "present", 3: "present", 4: "present", 5: "present", 6: "present", 7: "present", 9: "present", 10: "late", 11: "present" };
+for (let d = 1; d <= 30; d++) {
+  const dow = (d - 1) % 7;
+  let cls = "d";
+  if (d === 8) cls += " c-brand";               // holiday (demo)
+  else if (dow === 0) cls += " off";
+  else if (status[d]) cls += " c-" + status[d];
+  if (d === 10) cls += " sel";
+  if (d === 12) cls += " today";
+  cal.insertAdjacentHTML("beforeend", `<div class="${cls}">${d}</div>`);
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,230 @@
+/*
+ * Attendance Desk design tokens (v4 "Glass"): the single source of truth from DESIGN.md.
+ * Components use these (via the Tailwind names below), never raw hex values.
+ * The "shadcn bridge" at the bottom points the ui/* components at these tokens.
+ */
+
+/* ---- Light (default) ------------------------------------------------------------------- */
+:root {
+  /* Action: ink-black pills. Butter yellow = "yes" (Approve) and today. Never status. */
+  --ad-brand: #151410;
+  --ad-brand-hover: #2c2a23;
+  --ad-brand-fg: #ffffff;
+  --ad-brand-text: #151410;
+  --ad-brand-subtle: rgba(247, 207, 107, 0.28);
+  --ad-brand-muted: rgba(247, 207, 107, 0.45);
+  --ad-mint: #f7cf6b;
+  --ad-mint-hover: #f2c24c;
+  --ad-mint-fg: #3b2a00;
+
+  /* Warm canvas with soft colour light behind frosted-glass surfaces */
+  --ad-canvas: #f5ecd6;
+  --ad-canvas-glow: #ffd66b;
+  --ad-glow-2: #ffbe98;
+  --ad-glow-3: #bfe6d4;
+  --ad-surface: rgba(255, 255, 255, 0.6);
+  --ad-surface-sunken: #f6efdf;
+  --ad-surface-raised: #fffdf8;
+  --ad-glass-2: rgba(255, 255, 255, 0.78);
+  --ad-glass-edge: rgba(255, 255, 255, 0.9);
+  --ad-border: rgba(21, 20, 16, 0.09);
+  --ad-border-strong: #8d8676;
+  --ad-text: #151410;
+  --ad-text-secondary: #4f4b42;
+  --ad-text-muted: #6e6858;
+  --ad-text-disabled: #b3ad9e;
+
+  /* Feedback (not attendance) */
+  --ad-danger: #c81e1e;
+  --ad-danger-subtle: #fde8e8;
+  --ad-success: #1a8c4b;
+  --ad-warning: #b07d00;
+  --ad-info: #2f8fdb;
+
+  /* Attendance statuses: tint (bg) · fg (text) · solid (dot / edge) */
+  --ad-present-tint: #e3f5e9;   --ad-present-fg: #14532d;   --ad-present: #1a8c4b;
+  --ad-absent-tint: #fde8e8;    --ad-absent-fg: #9b1c1c;    --ad-absent: #dc2626;
+  --ad-late-tint: #fef3d6;      --ad-late-fg: #7a4a00;      --ad-late: #c47f00;
+  --ad-halfday-tint: #ffebdd;   --ad-halfday-fg: #8a3a00;   --ad-halfday: #ea6a0a;
+  --ad-leave-tint: #ddf4f3;     --ad-leave-fg: #0f5757;     --ad-leave: #0e9494;
+  --ad-holiday-tint: #e1f0fd;   --ad-holiday-fg: #0b4a7a;   --ad-holiday: #2f8fdb;
+  --ad-weeklyoff-tint: #efece4; --ad-weeklyoff-fg: #4f4b42; --ad-weeklyoff: #8d8676;
+  --ad-pending-tint: #f6e9f7;   --ad-pending-fg: #6b2170;   --ad-pending: #b0459f;
+
+  /* Elevation: glass cards float on the warm light */
+  --ad-shadow-sm: 0 1px 2px rgba(120, 88, 30, 0.08);
+  --ad-shadow-card: inset 0 0 0 1px var(--ad-glass-edge), 0 2px 6px rgba(120, 88, 30, 0.05), 0 24px 56px -26px rgba(120, 88, 30, 0.38);
+  --ad-shadow-md: 0 2px 6px rgba(120, 88, 30, 0.08), 0 12px 28px -8px rgba(120, 88, 30, 0.22);
+  --ad-shadow-lg: 0 4px 12px rgba(120, 88, 30, 0.1), 0 32px 70px -20px rgba(80, 58, 18, 0.45);
+  --ad-shadow-brand: 0 10px 22px -10px rgba(21, 20, 16, 0.55);
+  --ad-overlay: rgba(40, 30, 10, 0.32);
+  --ad-blur: blur(22px) saturate(160%);
+
+  /* Focus ring: surface gap + ink ring */
+  --ad-focus: 0 0 0 2px var(--ad-surface-raised), 0 0 0 4px var(--ad-brand);
+
+  /* Motion */
+  --ad-dur-fast: 120ms;
+  --ad-dur-base: 180ms;
+  --ad-ease-out: cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+
+/* ---- Dark: warm charcoal glass ------------------------------------------------------------ */
+.dark {
+  --ad-brand: #f6f1e6;
+  --ad-brand-hover: #ffffff;
+  --ad-brand-fg: #15130f;
+  --ad-brand-text: #f6f1e6;
+  --ad-brand-subtle: rgba(247, 207, 107, 0.16);
+  --ad-brand-muted: rgba(247, 207, 107, 0.28);
+  --ad-mint: #f7cf6b;
+  --ad-mint-hover: #ffdc85;
+  --ad-mint-fg: #2e2100;
+
+  --ad-canvas: #15130f;
+  --ad-canvas-glow: #6b5114;
+  --ad-glow-2: #5a2f1f;
+  --ad-glow-3: #17463a;
+  --ad-surface: rgba(40, 36, 30, 0.58);
+  --ad-surface-sunken: #24211b;
+  --ad-surface-raised: #2b2720;
+  --ad-glass-2: rgba(52, 47, 39, 0.72);
+  --ad-glass-edge: rgba(255, 255, 255, 0.08);
+  --ad-border: rgba(255, 255, 255, 0.08);
+  --ad-border-strong: #7d7564;
+  --ad-text: #f6f1e6;
+  --ad-text-secondary: #cdc5b3;
+  --ad-text-muted: #a0977f;
+  --ad-text-disabled: #5e574a;
+
+  --ad-danger: #f87171;
+  --ad-danger-subtle: #3a1517;
+  --ad-success: #46d08a;
+  --ad-warning: #f2b21b;
+  --ad-info: #4aa8ee;
+
+  --ad-present-tint: #12321f;   --ad-present-fg: #86e5a9;   --ad-present: #46d08a;
+  --ad-absent-tint: #3a1517;    --ad-absent-fg: #fca5a5;    --ad-absent: #f26a6a;
+  --ad-late-tint: #352708;      --ad-late-fg: #f8cf62;      --ad-late: #f3b53f;
+  --ad-halfday-tint: #3a1f0c;   --ad-halfday-fg: #fdba8c;   --ad-halfday: #f7873a;
+  --ad-leave-tint: #0f3131;     --ad-leave-fg: #7adbd8;     --ad-leave: #3cc6c4;
+  --ad-holiday-tint: #0e2a42;   --ad-holiday-fg: #8cc8f5;   --ad-holiday: #4aa8ee;
+  --ad-weeklyoff-tint: #2a2620; --ad-weeklyoff-fg: #c2baa8; --ad-weeklyoff: #857d6b;
+  --ad-pending-tint: #33173a;   --ad-pending-fg: #e9aeea;   --ad-pending: #d06bcb;
+
+  --ad-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
+  --ad-shadow-card: inset 0 0 0 1px var(--ad-glass-edge), 0 2px 6px rgba(0, 0, 0, 0.25), 0 24px 56px -26px rgba(0, 0, 0, 0.75);
+  --ad-shadow-md: 0 2px 6px rgba(0, 0, 0, 0.4), 0 12px 28px -8px rgba(0, 0, 0, 0.6);
+  --ad-shadow-lg: 0 4px 12px rgba(0, 0, 0, 0.5), 0 32px 70px -20px rgba(0, 0, 0, 0.8);
+  --ad-shadow-brand: 0 10px 22px -10px rgba(0, 0, 0, 0.7);
+  --ad-overlay: rgba(0, 0, 0, 0.55);
+}
+
+/* ---- Tailwind v4 names (utilities like bg-surface, text-ink-3, bg-st-late-tint) -------- */
+@theme inline {
+  --font-sans: var(--font-app), ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+
+  --color-brand: var(--ad-brand);
+  --color-brand-hover: var(--ad-brand-hover);
+  --color-on-brand: var(--ad-brand-fg);
+  --color-brand-ink: var(--ad-brand-text);
+  --color-brand-subtle: var(--ad-brand-subtle);
+  --color-brand-muted: var(--ad-brand-muted);
+  --color-mint: var(--ad-mint);
+  --color-butter: var(--ad-mint);
+  --color-on-butter: var(--ad-mint-fg);
+  --color-glass: var(--ad-glass-2);
+  --color-mint-hover: var(--ad-mint-hover);
+  --color-on-mint: var(--ad-mint-fg);
+
+  --color-canvas: var(--ad-canvas);
+  --color-surface: var(--ad-surface);
+  --color-sunken: var(--ad-surface-sunken);
+  --color-raised: var(--ad-surface-raised);
+  --color-line: var(--ad-border);
+  --color-line-strong: var(--ad-border-strong);
+  --color-ink: var(--ad-text);
+  --color-ink-2: var(--ad-text-secondary);
+  --color-ink-3: var(--ad-text-muted);
+  --color-ink-disabled: var(--ad-text-disabled);
+
+  --color-danger: var(--ad-danger);
+  --color-danger-subtle: var(--ad-danger-subtle);
+  --color-success: var(--ad-success);
+  --color-warning: var(--ad-warning);
+  --color-info: var(--ad-info);
+
+  --color-st-present: var(--ad-present);     --color-st-present-tint: var(--ad-present-tint);     --color-st-present-fg: var(--ad-present-fg);
+  --color-st-absent: var(--ad-absent);       --color-st-absent-tint: var(--ad-absent-tint);       --color-st-absent-fg: var(--ad-absent-fg);
+  --color-st-late: var(--ad-late);           --color-st-late-tint: var(--ad-late-tint);           --color-st-late-fg: var(--ad-late-fg);
+  --color-st-halfday: var(--ad-halfday);     --color-st-halfday-tint: var(--ad-halfday-tint);     --color-st-halfday-fg: var(--ad-halfday-fg);
+  --color-st-leave: var(--ad-leave);         --color-st-leave-tint: var(--ad-leave-tint);         --color-st-leave-fg: var(--ad-leave-fg);
+  --color-st-holiday: var(--ad-holiday);     --color-st-holiday-tint: var(--ad-holiday-tint);     --color-st-holiday-fg: var(--ad-holiday-fg);
+  --color-st-weeklyoff: var(--ad-weeklyoff); --color-st-weeklyoff-tint: var(--ad-weeklyoff-tint); --color-st-weeklyoff-fg: var(--ad-weeklyoff-fg);
+  --color-st-pending: var(--ad-pending);     --color-st-pending-tint: var(--ad-pending-tint);     --color-st-pending-fg: var(--ad-pending-fg);
+
+  --radius-xs: 6px;
+  --radius-sm: 10px;
+  --radius-md: 14px;
+  --radius-lg: 22px;
+  --radius-xl: 28px;
+
+  --shadow-sm: var(--ad-shadow-sm);
+  --shadow-card: var(--ad-shadow-card);
+  --shadow-brand: var(--ad-shadow-brand);
+  --shadow-md: var(--ad-shadow-md);
+  --shadow-lg: var(--ad-shadow-lg);
+
+  /* Type scale (DESIGN.md §3): text-display, text-title-1 … text-clock */
+  --text-display: 32px;   --text-display--line-height: 40px;   --text-display--font-weight: 400;   --text-display--letter-spacing: -0.02em;
+  --text-title-1: 24px;   --text-title-1--line-height: 32px;   --text-title-1--font-weight: 500;   --text-title-1--letter-spacing: -0.02em;
+  --text-title-2: 18px;   --text-title-2--line-height: 26px;   --text-title-2--font-weight: 500;
+  --text-title-3: 16px;   --text-title-3--line-height: 24px;   --text-title-3--font-weight: 500;
+  --text-body: 14px;      --text-body--line-height: 20px;
+  --text-cell: 13px;      --text-cell--line-height: 18px;
+  --text-label: 13px;     --text-label--line-height: 18px;     --text-label--font-weight: 500;
+  --text-caption: 12px;   --text-caption--line-height: 16px;   --text-caption--font-weight: 500;
+  --text-col-header: 12px; --text-col-header--line-height: 16px; --text-col-header--font-weight: 600;
+  --text-clock: 44px;     --text-clock--line-height: 48px;     --text-clock--font-weight: 300;     --text-clock--letter-spacing: -0.02em;
+  --text-m-title: 22px;   --text-m-title--line-height: 28px;   --text-m-title--font-weight: 500;
+  --text-m-section: 18px; --text-m-section--line-height: 24px; --text-m-section--font-weight: 500;
+  --text-m-body: 16px;    --text-m-body--line-height: 24px;
+  --text-m-meta: 14px;    --text-m-meta--line-height: 20px;    --text-m-meta--font-weight: 500;
+  --text-m-caption: 13px; --text-m-caption--line-height: 18px; --text-m-caption--font-weight: 500;
+
+  --ease-out: var(--ad-ease-out);
+}
+
+/* ---- shadcn bridge: existing components/ui/* pick up the new system unchanged ---------- */
+:root,
+.dark {
+  --background: var(--ad-surface-raised);
+  --foreground: var(--ad-text);
+  --card: var(--ad-surface);
+  --card-foreground: var(--ad-text);
+  --popover: var(--ad-surface-raised);
+  --popover-foreground: var(--ad-text);
+  --primary: var(--ad-brand);
+  --primary-foreground: var(--ad-brand-fg);
+  --secondary: var(--ad-surface-sunken);
+  --secondary-foreground: var(--ad-text);
+  --muted: var(--ad-surface-sunken);
+  --muted-foreground: var(--ad-text-muted);
+  --accent: var(--ad-surface-sunken);
+  --accent-foreground: var(--ad-text);
+  --destructive: var(--ad-danger);
+  --border: var(--ad-border);
+  --input: var(--ad-border-strong);
+  --ring: var(--ad-brand);
+  --radius: 14px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
