@@ -58,7 +58,7 @@ Close the SSH window and open it again (so Docker works without `sudo`).
 
 ## 6. Make and upload the files (on this PC)
 
-In `attendance-next`:
+In `Attendance-Ontime` (the project folder):
 
 ```bash
 npm run bundle      # → Attendance-private\exports\attendance-deploy.tgz   (the code)
