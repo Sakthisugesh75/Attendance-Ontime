@@ -142,14 +142,26 @@ export async function countRequestDays(employeeId: number, from: string, to: str
 // ---- Balances ---------------------------------------------------------------
 
 /**
+ * Leave types an employee may use: those open to everyone (no designation rows) plus those
+ * limited to the employee's designation.
+ */
+export async function leaveTypeScope(employeeId: number, db: Prisma.TransactionClient = prisma): Promise<Prisma.LeaveTypeWhereInput> {
+  const e = await db.employee.findUnique({ where: { id: employeeId }, select: { designationId: true } });
+  return {
+    OR: [{ designations: { none: {} } }, ...(e?.designationId ? [{ designations: { some: { designationId: e.designationId } } }] : [])],
+  };
+}
+
+/**
  * Balance per active leave type for a year. Without a LeaveBalance row the allotment is worked out
  * (custom quota by person / designation, plus last year's unused days carried forward; see
  * lib/leave-allocation.ts) and the row is created on the first approval. Pending = leave requests
  * still waiting for a decision that start in that year.
  */
 export async function getBalances(employeeId: number, year: number, db: Prisma.TransactionClient = prisma): Promise<BalanceRow[]> {
+  const scope = await leaveTypeScope(employeeId, db);
   const [types, alloc, pending] = await Promise.all([
-    db.leaveType.findMany({ where: { isActive: true }, orderBy: { id: "asc" } }),
+    db.leaveType.findMany({ where: { isActive: true, ...scope }, orderBy: { id: "asc" } }),
     loadAllocation(db, [employeeId], year),
     db.attendanceRequest.groupBy({
       by: ["leaveTypeId"],
@@ -325,6 +337,9 @@ async function checkNewRequest(employeeId: number, v: NormalizedRequest): Promis
     case "LEAVE": {
       const type = await prisma.leaveType.findFirst({ where: { id: v.leaveTypeId ?? 0, isActive: true } });
       if (!type) return fail("Pick a valid leave type.", "leaveTypeId");
+      if (!(await prisma.leaveType.count({ where: { id: type.id, ...(await leaveTypeScope(employeeId)) } }))) {
+        return fail(`${type.name} isn't available for this designation.`, "leaveTypeId");
+      }
       const days = countWorkingDays(v.fromDate, v.toDate, isOff, v.halfDay);
       if (days <= 0) return fail("Those dates are all weekly offs or holidays. Nothing to apply for.", "fromDate");
       const balance = (await getBalances(employeeId, Number(v.fromDate.slice(0, 4)))).find((b) => b.leaveTypeId === type.id);

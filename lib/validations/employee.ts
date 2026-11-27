@@ -65,7 +65,7 @@ export const EMPLOYEE_STATUS_LABEL = { ACTIVE: "Active", ON_NOTICE: "On notice",
 
 export const employeeListParams = z.object({
   q: z.string().trim().max(100).catch(""),
-  status: z.enum(["ALL", "ACTIVE", "ON_NOTICE", "EXITED"]).catch("ALL"),
+  status: z.enum(["ALL", "ACTIVE", "ON_NOTICE", "EXITED", "REMOVED"]).catch("ALL"),
   department: z.coerce.number().int().positive().optional().catch(undefined),
   sort: z.enum(["name", "code", "joined"]).catch("name"),
   dir: z.enum(["asc", "desc"]).catch("asc"),

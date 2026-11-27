@@ -26,6 +26,22 @@ export const companySchema = z.object({
   logoPath: z.string().nullable(),
 });
 
+/** How Excel / PDF exports look: letterhead, notes, signature lines and hidden columns per report. */
+export const exportFormatSchema = z.object({
+  showLogo: z.boolean(),
+  showAddress: z.boolean(),
+  /** Line under the title, e.g. "Confidential: for payroll use only" */
+  headerNote: z.string().trim().max(200, "Keep the note under 200 characters"),
+  /** Small print at the bottom of each PDF page and under the Excel table */
+  footerNote: z.string().trim().max(300, "Keep the note under 300 characters"),
+  /** Signature lines at the end, e.g. "Prepared by", "Approved by" */
+  signatures: z.array(z.string().trim().min(1, "Enter a label or remove the line").max(40, "At most 40 characters")).max(4, "At most 4 signature lines"),
+  pdfOrientation: z.enum(["landscape", "portrait"]),
+  /** Report key → column keys left out of exports (the first column is always kept) */
+  hiddenColumns: z.record(z.string().max(40), z.array(z.string().max(40)).max(60)),
+});
+export type ExportFormat = z.output<typeof exportFormatSchema>;
+
 export const geofenceSchema = z.object({
   enabled: z.boolean(),
   lat: z.coerce
@@ -100,6 +116,17 @@ export const weeklyOffSchema = z.object({
   effectiveFrom: ymd,
 });
 export type WeeklyOffInput = z.infer<typeof weeklyOffSchema>;
+
+/** A weekly-off policy for one department or designation ("company" = follow the company policy again). */
+export const groupWeeklyOffSchema = z.object({
+  target: z.enum(["department", "designation"]),
+  targetId: z.coerce.number({ invalid_type_error: "Pick who it's for" }).int().positive("Pick who it's for"),
+  mode: z.enum(["custom", "company"]),
+  saturday: z.enum(SATURDAY_POLICY_KEYS as [SaturdayPolicy, ...SaturdayPolicy[]]),
+  sundayOff: z.boolean(),
+  effectiveFrom: ymd,
+});
+export type GroupWeeklyOffInput = z.infer<typeof groupWeeklyOffSchema>;
 
 export const customDateSchema = z.object({
   date: ymd,
@@ -305,6 +332,8 @@ export const leaveTypeSchema = z
     carryForward: z.boolean(),
     maxCarryForward: leaveDays("Max carry forward"),
     isActive: z.boolean(),
+    /** Designations allowed to use it; empty = everyone */
+    designationIds: z.array(z.number().int().positive()).max(200).default([]),
   })
   .transform((v) => ({
     ...v,
@@ -372,6 +401,9 @@ export const SETTINGS_TABS = [
   { key: "policies", label: "Policies" },
   { key: "punching", label: "Punching" },
   { key: "organisation", label: "Departments" },
+  { key: "report-forms", label: "Report forms" },
+  { key: "exports", label: "Export format" },
+  { key: "backup", label: "Backup" },
 ] as const;
 export type SettingsTab = (typeof SETTINGS_TABS)[number]["key"];
 export const settingsTabSchema = z

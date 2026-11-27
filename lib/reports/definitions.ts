@@ -260,6 +260,8 @@ export function formatValue(kind: ColKind, v: ReportValue, key?: string): string
       return formatDuration(Number(v));
     case "pct":
       return `${v}%`;
+    case "money":
+      return `₹${Number(v).toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
     case "days":
     case "int":
       return Number.isInteger(Number(v)) ? String(v) : Number(v).toFixed(key === "overtimeHours" ? 2 : 1);

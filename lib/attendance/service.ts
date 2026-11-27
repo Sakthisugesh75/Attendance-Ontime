@@ -24,6 +24,9 @@ interface CtxEmployee {
   joiningDate: string;
   exitDate: string | null;
   assignments: { shiftId: number; from: string; to: string | null }[];
+  /** Current department / designation: pick their own weekly-off rule, if any */
+  departmentId?: number | null;
+  designationId?: number | null;
 }
 
 interface CtxRequest {
@@ -42,7 +45,7 @@ export async function loadContext(employeeIds: number[], from: string, to: strin
   const [employees, shifts, rules, holidays, requests, records] = await Promise.all([
     prisma.employee.findMany({
       where: { id: { in: employeeIds } },
-      select: { id: true, joiningDate: true, exitDate: true, shifts: { orderBy: { effectiveFrom: "asc" } } },
+      select: { id: true, joiningDate: true, exitDate: true, departmentId: true, designationId: true, shifts: { orderBy: { effectiveFrom: "asc" } } },
     }),
     prisma.shift.findMany({ include: shiftInclude }),
     prisma.weeklyOffRule.findMany(),
@@ -70,6 +73,8 @@ export async function loadContext(employeeIds: number[], from: string, to: strin
           joiningDate: dbToYmd(e.joiningDate),
           exitDate: e.exitDate ? dbToYmd(e.exitDate) : null,
           assignments: e.shifts.map((s) => ({ shiftId: s.shiftId, from: dbToYmd(s.effectiveFrom), to: s.effectiveTo ? dbToYmd(s.effectiveTo) : null })),
+          departmentId: e.departmentId,
+          designationId: e.designationId,
         },
       ]),
     ),
@@ -77,6 +82,9 @@ export async function loadContext(employeeIds: number[], from: string, to: strin
     shifts: new Map(shifts.map((s) => [s.id, s])),
     rules: rules.map((r) => ({
       shiftId: r.shiftId,
+      departmentId: r.departmentId,
+      designationId: r.designationId,
+      inherit: r.inherit,
       effectiveFrom: dbToYmd(r.effectiveFrom),
       pattern: r.pattern as WeeklyOffPattern,
       customOffDates: (r.customOffDates as string[] | null) ?? null,
@@ -124,7 +132,7 @@ export function computeFromContext(ctx: AttendanceContext, employeeId: number, y
   const record = ctx.records.get(recordKey(employeeId, ymd)) ?? null;
   const today = istDate(now);
   const holiday = ctx.holidays.get(ymd) ?? null;
-  const weeklyOff = isWeeklyOff(ctx.rules, ymd, shift?.id ?? null);
+  const weeklyOff = isWeeklyOff(ctx.rules, ymd, { shiftId: shift?.id ?? null, departmentId: emp.departmentId, designationId: emp.designationId });
 
   const reqs = ctx.requests.filter((r) => r.employeeId === employeeId && r.from <= ymd && r.to >= ymd);
   const leave = reqs.find((r) => r.type === "LEAVE");

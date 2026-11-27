@@ -13,6 +13,7 @@ tmp=$(mktemp)
 crontab -l 2>/dev/null | grep -v '# attendance' > "$tmp" || true
 cat >> "$tmp" <<EOF
 30 3 * * *  $call/celebrations    >/dev/null  # attendance: birthdays, 9:00 AM IST
+0 21 * * *  $call/backup          >/dev/null  # attendance: in-app backup (Settings > Backup), 2:30 AM IST
 0 5 * * *   $call/daily-summary   >/dev/null  # attendance: not punched in, 10:30 AM IST
 0 13 * * *  $call/report-reminder >/dev/null  # attendance: report reminder, 6:30 PM IST
 29 18 * * * $call/close-day       >/dev/null  # attendance: close the day, 11:59 PM IST

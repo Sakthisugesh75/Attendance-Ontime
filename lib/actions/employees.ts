@@ -357,11 +357,119 @@ export async function deleteEmployee(id: number, reason: string): Promise<Employ
       await writeAudit({ actorId: actor.id, action: "DELETE", entity: "Employee", entityId: id, before: { code: e.code, fullName: e.fullName }, reason: parsedReason.data }, tx);
     });
     revalidatePath("/employees");
-    return { ok: true, id, message: `${e.fullName} removed. Their attendance history is kept.` };
+    const held = await prisma.asset.count({ where: { employeeId: id, status: "ASSIGNED" } });
+    return {
+      ok: true,
+      id,
+      message: `${e.fullName} removed. Their attendance history is kept.${held ? ` They still hold ${held} asset${held === 1 ? "" : "s"}: take ${held === 1 ? "it" : "them"} back in Assets.` : ""}`,
+    };
   } catch (err) {
     if (err instanceof Forbidden) return fail(err.message);
     console.error("deleteEmployee failed", err);
     return fail("Could not remove the employee. Try again.");
+  }
+}
+
+/** Brings a removed employee back. Their sign-in stays off until HR turns it on in Edit. */
+export async function restoreEmployee(id: number): Promise<EmployeeResult> {
+  try {
+    const actor = await actionUser("employees.manage");
+    z.number().int().positive().parse(id);
+    // Team-scoped managers can't see removed people, so restoring needs the full reach.
+    if ((await scopeEmployeeIds(actor)) !== null) throw new Forbidden("Only people who can see the whole company can restore a removed employee.");
+    const e = await prisma.employee.findFirst({ where: { id, deletedAt: { not: null } }, include: { user: { include: { accessRole: { select: { id: true, name: true, systemKey: true } } } } } });
+    if (!e) return fail("This employee isn't in the removed list any more.");
+    checkAccountAdmin(actor, e.user, "restore");
+
+    await prisma.$transaction(async (tx) => {
+      await tx.employee.update({ where: { id }, data: { deletedAt: null } });
+      await writeAudit({ actorId: actor.id, action: "RESTORE", entity: "Employee", entityId: id, before: { deletedAt: e.deletedAt!.toISOString() }, after: { code: e.code, fullName: e.fullName } }, tx);
+    });
+    // Days missed while removed (the nightly close skips removed people) get filled in.
+    const removedOn = istDate(e.deletedAt!);
+    const joined = dbToYmd(e.joiningDate);
+    await recomputeRange(id, removedOn < joined ? joined : removedOn, istDate());
+    revalidatePath("/employees");
+    return { ok: true, id, message: `${e.fullName} restored.${e.user ? " Turn their sign-in back on in Edit." : ""}` };
+  } catch (err) {
+    if (err instanceof Forbidden) return fail(err.message);
+    console.error("restoreEmployee failed", err);
+    return fail("Could not restore the employee. Try again.");
+  }
+}
+
+/**
+ * Permanent delete (Super Admin only) of an employee already in the removed list: their
+ * attendance, requests, balances, reports and shift history go too. Cannot be undone.
+ * `confirmCode` must repeat the employee code. The sign-in is deleted when nothing else points
+ * at it; otherwise it is kept disabled (so the audit log still names who did what) with its
+ * email, phone and username freed for reuse.
+ */
+export async function purgeEmployee(id: number, confirmCode: string): Promise<EmployeeResult> {
+  try {
+    const actor = await actionUser("employees.manage");
+    if (!actor.isSuperAdmin) throw new Forbidden("Only a Super Admin can delete an employee permanently.");
+    z.number().int().positive().parse(id);
+    const e = await prisma.employee.findFirst({ where: { id, deletedAt: { not: null } } });
+    if (!e) return fail("Remove the employee first. Only removed employees can be deleted permanently.");
+    if (confirmCode.trim().toUpperCase() !== e.code.toUpperCase()) return fail(`Type ${e.code} to confirm.`, "confirm");
+    if (e.userId === actor.id) throw new Forbidden("You can't delete your own record.");
+
+    const records = await prisma.attendanceRecord.findMany({ where: { employeeId: id }, select: { id: true, punchInSelfie: true, punchOutSelfie: true } });
+    const requests = await prisma.attendanceRequest.findMany({ where: { employeeId: id }, select: { attachmentPath: true } });
+    const claims = await prisma.expenseClaim.findMany({ where: { employeeId: id }, select: { receiptPath: true } });
+    const files = [e.photoPath, ...records.flatMap((r) => [r.punchInSelfie, r.punchOutSelfie]), ...requests.map((r) => r.attachmentPath), ...claims.map((c) => c.receiptPath)].filter(
+      (f): f is string => !!f,
+    );
+
+    let keptUser = false;
+    await prisma.$transaction(
+      async (tx) => {
+        await tx.importChange.deleteMany({ where: { recordId: { in: records.map((r) => r.id) } } });
+        await tx.attendanceRecord.deleteMany({ where: { employeeId: id } });
+        await tx.attendanceRequest.deleteMany({ where: { employeeId: id } });
+        await tx.leaveBalance.deleteMany({ where: { employeeId: id } });
+        await tx.leaveQuotaRule.deleteMany({ where: { employeeId: id } });
+        await tx.dailyReport.deleteMany({ where: { employeeId: id } });
+        await tx.shiftAssignment.deleteMany({ where: { employeeId: id } });
+        await tx.expenseClaim.deleteMany({ where: { employeeId: id } });
+        // Anything still with them goes back to the store; asset history keeps the events without the name.
+        await tx.asset.updateMany({ where: { employeeId: id }, data: { employeeId: null, status: "AVAILABLE", assignedAt: null } });
+        await tx.assetEvent.updateMany({ where: { employeeId: id }, data: { employeeId: null } });
+        await tx.employee.updateMany({ where: { managerId: id }, data: { managerId: null } });
+        await tx.employee.delete({ where: { id } });
+
+        if (e.userId) {
+          const uid = e.userId;
+          const [audits, approvals, entered, imports, announcements, reviews] = await Promise.all([
+            tx.auditLog.count({ where: { actorId: uid } }),
+            tx.attendanceRequest.count({ where: { approverId: uid } }),
+            tx.attendanceRequest.count({ where: { enteredById: uid } }),
+            tx.importBatch.count({ where: { createdById: uid } }),
+            tx.announcement.count({ where: { createdById: uid } }),
+            tx.dailyReport.count({ where: { reviewedById: uid } }),
+          ]);
+          if (audits + approvals + entered + imports + announcements + reviews === 0) {
+            await tx.user.delete({ where: { id: uid } });
+          } else {
+            keptUser = true;
+            await tx.user.update({ where: { id: uid }, data: { isActive: false, email: null, phone: null, username: null, sessionVersion: { increment: 1 } } });
+          }
+        }
+        await writeAudit(
+          { actorId: actor.id, action: "PURGE", entity: "Employee", entityId: id, before: { code: e.code, fullName: e.fullName, attendanceDays: records.length, requests: requests.length }, after: { signInKept: keptUser } },
+          tx,
+        );
+      },
+      { timeout: 60_000 },
+    );
+    await Promise.all(files.map((f) => unlink(path.join(STORAGE, f)).catch(() => {})));
+    revalidatePath("/employees");
+    return { ok: true, id, message: `${e.fullName} (${e.code}) deleted permanently.` };
+  } catch (err) {
+    if (err instanceof Forbidden) return fail(err.message);
+    console.error("purgeEmployee failed", err);
+    return fail("Could not delete the employee. Try again.");
   }
 }
 

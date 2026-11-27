@@ -3,6 +3,7 @@ import type { ReportRow } from "@/lib/daily-reports";
 import { formatDate, formatDuration } from "@/lib/time";
 import { cn } from "@/lib/utils";
 import { fmtHours, TASK_STATUS_META, type TaskStatus } from "@/lib/validations/daily-reports";
+import { answerText } from "@/lib/validations/report-forms";
 
 /** Pill per DESIGN.md §4.4: 22px, icon + word on a tint, never colour alone. */
 const base = "inline-flex h-[22px] items-center gap-1 rounded-full pr-2 pl-1.5 text-caption font-semibold whitespace-nowrap";
@@ -48,8 +49,10 @@ export function BlockedChip({ className }: { className?: string }) {
 
 /** The full report, read-only: tasks, summary, tomorrow's plan, blockers and the review note. */
 export function ReportBody({ report, workedMinutes, showReview = true }: { report: ReportRow; workedMinutes?: number | null; showReview?: boolean }) {
+  const showTasks = report.tasks.length > 0 || (!report.summary && !report.answers.length);
   return (
     <div className="space-y-5">
+      {showTasks && (
       <section>
         <div className="flex items-baseline justify-between gap-3">
           <h4 className="text-label text-ink tabular-nums">Tasks · {report.tasks.length}</h4>
@@ -79,8 +82,19 @@ export function ReportBody({ report, workedMinutes, showReview = true }: { repor
           <p className="mt-2 text-body text-ink-3">No tasks listed.</p>
         )}
       </section>
+      )}
 
       {report.summary && <TextBlock label="Summary">{report.summary}</TextBlock>}
+      {report.answers.length > 0 && (
+        <dl className="grid gap-x-5 gap-y-3 sm:grid-cols-2">
+          {report.answers.map((a) => (
+            <div key={a.id} className={cn("min-w-0", a.type === "textarea" && "sm:col-span-2")}>
+              <dt className="text-label text-ink">{a.label}</dt>
+              <dd className="mt-0.5 text-body whitespace-pre-line text-ink-2 tabular-nums">{answerText(a)}</dd>
+            </div>
+          ))}
+        </dl>
+      )}
       {report.tomorrowPlan && (
         <TextBlock label="Tomorrow" icon={<Sunrise aria-hidden className="size-3.5" />}>
           {report.tomorrowPlan}

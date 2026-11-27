@@ -42,7 +42,7 @@ export interface EmployeeDays {
   days: DayFacts[];
 }
 
-export type ColKind = "text" | "code" | "date" | "clock" | "duration" | "int" | "days" | "pct";
+export type ColKind = "text" | "code" | "date" | "clock" | "duration" | "int" | "days" | "pct" | "money";
 
 export interface ReportColumn {
   key: string;

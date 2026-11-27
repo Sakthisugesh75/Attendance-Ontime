@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { isWeeklyOff, SATURDAY_POLICIES } from "@/lib/attendance/weekly-off";
+import { isWeeklyOff, ruleInForce, SATURDAY_POLICIES, type WeeklyOffPattern } from "@/lib/attendance/weekly-off";
 import { distanceMeters } from "@/lib/attendance/geo";
 import { formatClock, formatDate, formatTime, istAt, istDate, istMinutes, monthDates } from "@/lib/time";
 
@@ -56,5 +56,29 @@ describe("geofence distance", () => {
     const d = distanceMeters({ lat: 11.0168, lng: 76.9558 }, { lat: 11.0177, lng: 76.9558 });
     expect(d).toBeGreaterThan(95);
     expect(d).toBeLessThan(105);
+  });
+});
+
+describe("weekly offs by department and designation", () => {
+  const company = { shiftId: null, effectiveFrom: "2026-01-01", pattern: { "0": "ALL", "6": [2, 4] } as WeeklyOffPattern };
+  const sales = { shiftId: null, departmentId: 7, effectiveFrom: "2026-12-01", pattern: { "0": "ALL" } as WeeklyOffPattern };
+  const devs = { shiftId: null, designationId: 3, effectiveFrom: "2026-12-01", pattern: { "0": "ALL", "6": "ALL" } as WeeklyOffPattern };
+  const rules = [company, sales, devs];
+  // 12 Dec 2026 is the 2nd Saturday, 19 Dec the 3rd.
+  it("a group rule applies only from its start date", () => {
+    expect(isWeeklyOff(rules, "2026-11-28", { shiftId: null, departmentId: 7 })).toBe(true); // 4th Sat, company rule still
+    expect(isWeeklyOff(rules, "2026-12-12", { shiftId: null, departmentId: 7 })).toBe(false); // Sales works every Saturday
+  });
+  it("designation beats department beats company", () => {
+    expect(isWeeklyOff(rules, "2026-12-19", { shiftId: null, departmentId: 7, designationId: 3 })).toBe(true);
+    expect(isWeeklyOff(rules, "2026-12-19", { shiftId: null })).toBe(false);
+    expect(isWeeklyOff(rules, "2026-12-12", { shiftId: null })).toBe(true);
+  });
+  it("company lookups ignore group rules", () => {
+    expect(ruleInForce(rules, "2026-12-12", null)).toBe(company);
+  });
+  it("an inherit rule hands the group back to the next level", () => {
+    const back = { shiftId: null, departmentId: 7, inherit: true, effectiveFrom: "2027-01-01", pattern: {} as WeeklyOffPattern };
+    expect(ruleInForce([...rules, back], "2027-01-09", { shiftId: null, departmentId: 7 })).toBe(company);
   });
 });

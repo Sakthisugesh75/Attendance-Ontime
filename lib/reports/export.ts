@@ -1,7 +1,10 @@
 import "server-only";
+import { readFile } from "node:fs/promises";
+import path from "node:path";
 import { routeUser, scopeEmployeeIds } from "@/lib/session";
-import { getSetting } from "@/lib/settings";
+import { getSettings } from "@/lib/settings";
 import { formatDate, formatTime, istDate } from "@/lib/time";
+import type { ReportColumn } from "./types";
 import type { ExportHeader } from "./xlsx";
 
 /**
@@ -16,14 +19,46 @@ export async function exportGuard(): Promise<{ reach: number[] | null } | { deni
   return { reach: await scopeEmployeeIds(res.user) };
 }
 
+/** The company logo as bytes for Excel / PDF (PNG or JPG only; other formats are skipped). */
+async function logoBytes(logoPath: string | null): Promise<ExportHeader["logo"]> {
+  if (!logoPath) return null;
+  const ext = path.extname(logoPath).toLowerCase();
+  const format = ext === ".png" ? "png" : ext === ".jpg" || ext === ".jpeg" ? "jpeg" : null;
+  if (!format) return null;
+  const storage = path.join(process.cwd(), "storage");
+  const abs = path.resolve(storage, logoPath);
+  if (!abs.startsWith(storage + path.sep)) return null;
+  try {
+    return { data: await readFile(abs), format };
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Title block for an export, with the letterhead from Settings → Export format.
+ * `reportKey` picks the columns hidden for that report (see `visibleColumns`).
+ */
 export async function exportHeader(title: string, from: string, to: string, now = new Date()): Promise<ExportHeader> {
-  const company = await getSetting("company");
+  const { company, exportFormat: f } = await getSettings("company", "exportFormat");
   return {
     company: company.name,
     title,
     period: from === to ? formatDate(from) : `${formatDate(from)} – ${formatDate(to)}`,
     generatedAt: `${formatDate(istDate(now))}, ${formatTime(now)} IST`,
+    address: f.showAddress && company.address ? company.address : null,
+    logo: f.showLogo ? await logoBytes(company.logoPath) : null,
+    headerNote: f.headerNote || null,
+    footerNote: f.footerNote || null,
+    signatures: f.signatures,
+    orientation: f.pdfOrientation,
   };
+}
+
+/** Columns for an export, without the ones hidden for this report (the first column always stays). */
+export async function visibleColumns(reportKey: string, columns: ReportColumn[]): Promise<ReportColumn[]> {
+  const hidden = new Set((await getSettings("exportFormat")).exportFormat.hiddenColumns[reportKey] ?? []);
+  return columns.filter((c, i) => i === 0 || !hidden.has(c.key));
 }
 
 export const XLSX_TYPE = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";

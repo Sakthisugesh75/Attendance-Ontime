@@ -1,7 +1,7 @@
 import "server-only";
 import type { z } from "zod";
 import { prisma } from "@/lib/prisma";
-import { capsSchema, companySchema, geofenceSchema, punchSchema } from "@/lib/validations/settings";
+import { capsSchema, companySchema, exportFormatSchema, geofenceSchema, punchSchema } from "@/lib/validations/settings";
 
 /**
  * Every setting key with its schema and default. Stored as JSON rows in CompanySetting.
@@ -12,6 +12,7 @@ export const settingSchemas = {
   geofence: geofenceSchema,
   punch: punchSchema,
   caps: capsSchema,
+  exportFormat: exportFormatSchema,
 } as const;
 
 export type SettingKey = keyof typeof settingSchemas;
@@ -23,6 +24,7 @@ export const settingDefaults: { [K in SettingKey]: SettingValue<K> } = {
   geofence: { enabled: false, lat: 11.0168, lng: 76.9558, radiusMeters: 200 },
   punch: { selfieRequired: false },
   caps: { wfhPerMonth: 4, permissionPerMonth: 2, permissionMaxMinutes: 120 },
+  exportFormat: { showLogo: true, showAddress: true, headerNote: "", footerNote: "", signatures: [], pdfOrientation: "landscape", hiddenColumns: {} },
 };
 
 export async function getSetting<K extends SettingKey>(key: K): Promise<SettingValue<K>> {

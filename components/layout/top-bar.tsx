@@ -1,8 +1,9 @@
 "use client";
 
-import { KeyRound, LogOut, Monitor, Moon, Sun } from "lucide-react";
+import { KeyRound, LogOut, Monitor, Moon, Sun, UserPen } from "lucide-react";
 import Link from "next/link";
 import { useTheme } from "next-themes";
+import { useState } from "react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import {
@@ -24,11 +25,13 @@ import { Breadcrumbs } from "./breadcrumbs";
 import { CommandPalette } from "./command-palette";
 import { InstallAppItem } from "./install-app";
 import { NotificationBell, type BellItem } from "./notification-bell";
+import { ProfileDialog } from "./profile-dialog";
 
 /** `access` is optional: without it the command palette asks the server once when first opened. */
 export function TopBar({ name, email, notifications, access }: { name: string; email: string; notifications: BellItem[]; access?: NavAccess }) {
   const { theme, setTheme } = useTheme();
   const ThemeIcon = theme === "dark" ? Moon : theme === "light" ? Sun : Monitor;
+  const [profileOpen, setProfileOpen] = useState(false);
 
   return (
     <header className="sticky top-0 z-30 flex h-14 shrink-0 items-center gap-2 px-3 backdrop-blur-xl [background:color-mix(in_srgb,var(--ad-canvas)_55%,transparent)] sm:px-5">
@@ -71,6 +74,9 @@ export function TopBar({ name, email, notifications, access }: { name: string; e
             </DropdownMenuRadioGroup>
             <DropdownMenuSeparator />
             <InstallAppItem />
+            <DropdownMenuItem onSelect={() => setProfileOpen(true)}>
+              <UserPen /> Edit profile
+            </DropdownMenuItem>
             <DropdownMenuItem asChild>
               <Link href="/change-password">
                 <KeyRound /> Change password
@@ -81,6 +87,7 @@ export function TopBar({ name, email, notifications, access }: { name: string; e
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
+        <ProfileDialog open={profileOpen} onOpenChange={setProfileOpen} name={name} email={email} />
       </div>
     </header>
   );

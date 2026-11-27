@@ -3,7 +3,7 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Check, CheckCheck, CircleAlert, Loader2, Lock, OctagonAlert, Plus, Send, Sunrise, Timer, Trash2 } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useEffect, useRef, useTransition } from "react";
+import { useEffect, useRef, useState, useTransition } from "react";
 import { Controller, useFieldArray, useForm, useWatch, type FieldPath } from "react-hook-form";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -15,8 +15,61 @@ import { saveDailyReport } from "@/lib/actions/daily-reports";
 import type { DayHint, ReportRow } from "@/lib/daily-reports";
 import { formatDate, formatDuration, WEEKDAYS, weekdayOf } from "@/lib/time";
 import { cn } from "@/lib/utils";
-import { blankTask, fmtHours, MAX_TASKS, reportSchema, TASK_STATUS_META, TASK_STATUSES, totalHours, type ReportInput, type ReportValues } from "@/lib/validations/daily-reports";
+import { blankTask, checkReportContent, fmtHours, MAX_TASKS, reportSchema, TASK_STATUS_META, TASK_STATUSES, totalHours, type ReportInput, type ReportValues } from "@/lib/validations/daily-reports";
+import { checkAnswers, type AnswerValue, type FormField, type ReportForm } from "@/lib/validations/report-forms";
 import { ReportBody } from "./report-body";
+
+/** One custom field of the report form. */
+function AnswerField({ field: f, value, error, onChange }: { field: FormField; value: AnswerValue; error?: string; onChange: (v: AnswerValue) => void }) {
+  const id = `answer-${f.id}`;
+  const wide = f.type === "textarea";
+  return (
+    <div className={cn("space-y-2", wide && "sm:col-span-2")}>
+      <Label htmlFor={id}>
+        {f.label}
+        {!f.required && <span className="font-normal text-ink-3"> (optional)</span>}
+      </Label>
+      {f.type === "textarea" ? (
+        <Textarea id={id} rows={3} maxLength={2000} value={typeof value === "string" ? value : ""} onChange={(e) => onChange(e.target.value)} aria-invalid={!!error} />
+      ) : f.type === "select" || f.type === "yesno" ? (
+        <Select
+          value={f.type === "yesno" ? (value === true ? "yes" : value === false ? "no" : "") : typeof value === "string" ? value : ""}
+          onValueChange={(v) => onChange(f.type === "yesno" ? v === "yes" : v)}
+        >
+          <SelectTrigger id={id} className="w-full" aria-invalid={!!error}>
+            <SelectValue placeholder="Choose" />
+          </SelectTrigger>
+          <SelectContent>
+            {(f.type === "yesno" ? ["yes", "no"] : f.options).map((o) => (
+              <SelectItem key={o} value={o}>
+                {f.type === "yesno" ? (o === "yes" ? "Yes" : "No") : o}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      ) : (
+        <Input
+          id={id}
+          type={f.type === "number" ? "number" : f.type === "date" ? "date" : "text"}
+          inputMode={f.type === "number" ? "decimal" : undefined}
+          maxLength={f.type === "text" ? 300 : undefined}
+          value={value === null || typeof value === "boolean" ? "" : String(value)}
+          onChange={(e) => onChange(f.type === "number" ? (e.target.value === "" ? null : Number(e.target.value)) : e.target.value)}
+          className={cn((f.type === "number" || f.type === "date") && "tabular-nums")}
+          aria-invalid={!!error}
+        />
+      )}
+      {error ? (
+        <p className="flex items-center gap-1.5 text-caption text-danger">
+          <CircleAlert aria-hidden className="size-3.5 shrink-0" />
+          {error}
+        </p>
+      ) : (
+        f.hint && <p className="text-caption text-ink-3">{f.hint}</p>
+      )}
+    </div>
+  );
+}
 
 const dayName = (d: string, today: string) => (d === today ? "Today" : WEEKDAYS[weekdayOf(d)]!.slice(0, 3));
 
@@ -80,15 +133,16 @@ export function DayStrip({ dates, today, selected, onSelect, reports, hints }: {
 
 function defaults(date: string, r: ReportRow | undefined): ReportInput {
   return r
-    ? { date, tasks: r.tasks.length ? r.tasks.map((t) => ({ ...t })) : [blankTask()], summary: r.summary, tomorrowPlan: r.tomorrowPlan, blockers: r.blockers }
-    : { date, tasks: [blankTask()], summary: "", tomorrowPlan: "", blockers: "" };
+    ? { date, tasks: r.tasks.length ? r.tasks.map((t) => ({ ...t })) : [blankTask()], summary: r.summary, tomorrowPlan: r.tomorrowPlan, blockers: r.blockers, answers: [] }
+    : { date, tasks: [blankTask()], summary: "", tomorrowPlan: "", blockers: "", answers: [] };
 }
 
 /**
  * The report for one day: an editable form until it is reviewed, then a read-only view.
  * Give it a key per day + report version so switching days starts from fresh values.
+ * `form` (from Settings → Report forms) decides which sections show and adds custom fields.
  */
-export function ReportComposer({ date, today, report, hint }: { date: string; today: string; report: ReportRow | undefined; hint: DayHint | null }) {
+export function ReportComposer({ date, today, report, hint, form: reportForm }: { date: string; today: string; report: ReportRow | undefined; hint: DayHint | null; form: ReportForm }) {
   const router = useRouter();
   const [pending, start] = useTransition();
   const form = useForm<ReportInput, unknown, ReportValues>({ resolver: zodResolver(reportSchema), defaultValues: defaults(date, report) });
@@ -98,12 +152,32 @@ export function ReportComposer({ date, today, report, hint }: { date: string; to
   const tasks = useWatch({ control, name: "tasks" });
   const hours = totalHours(tasks ?? []);
   const blockersText = useWatch({ control, name: "blockers" });
+  const S = reportForm.sections;
+  const [answers, setAnswers] = useState<Record<string, AnswerValue>>(() => Object.fromEntries((report?.answers ?? []).map((a) => [a.id, a.value])));
+  const [answerErrors, setAnswerErrors] = useState<Record<string, string>>({});
 
-  const onSubmit = handleSubmit((values) =>
+  const onSubmit = handleSubmit((raw) =>
     start(async () => {
+      const values = { ...raw, answers: reportForm.fields.map((f) => ({ id: f.id, value: answers[f.id] ?? null })) };
+      // Same checks as the server, so problems show next to the field straight away.
+      const content = checkReportContent(values, S);
+      if (content) {
+        if (content.field === "summary") form.setError("summary", { message: content.message });
+        else form.setError("tasks", { message: content.message });
+        return;
+      }
+      const checked = checkAnswers(reportForm.fields, values.answers);
+      if (!checked.ok) {
+        setAnswerErrors({ [checked.fieldId]: checked.message });
+        document.getElementById(`answer-${checked.fieldId}`)?.focus();
+        return;
+      }
+      setAnswerErrors({});
       const res = await saveDailyReport(values);
       if (!res.ok) {
         if (res.field && ["summary", "tomorrowPlan", "blockers"].includes(res.field)) form.setError(res.field as FieldPath<ReportInput>, { message: res.error });
+        else if (res.field === "tasks") form.setError("tasks", { message: res.error });
+        else if (res.field?.startsWith("answer:")) setAnswerErrors({ [res.field.slice(7)]: res.error });
         else toast.error(res.error);
         return;
       }
@@ -164,16 +238,19 @@ export function ReportComposer({ date, today, report, hint }: { date: string; to
             <div className="min-w-0 flex-1">
               <p className="text-body text-ink">
                 <span className="font-semibold tabular-nums">{formatDuration(worked)}</span> at work{hint?.inProgress ? " so far" : ""}
-                <span className="text-ink-3 tabular-nums"> · {fmtHours(hours)} logged below</span>
+                {S.tasks && <span className="text-ink-3 tabular-nums"> · {fmtHours(hours)} logged below</span>}
               </p>
-              <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-line" aria-hidden>
-                <span className="block h-full rounded-full bg-ink-2 transition-[width] duration-[180ms]" style={{ width: `${Math.min(100, (hours * 60 * 100) / worked)}%` }} />
-              </div>
+              {S.tasks && (
+                <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-line" aria-hidden>
+                  <span className="block h-full rounded-full bg-ink-2 transition-[width] duration-[180ms]" style={{ width: `${Math.min(100, (hours * 60 * 100) / worked)}%` }} />
+                </div>
+              )}
             </div>
           </div>
         )}
 
         {/* Tasks */}
+        {S.tasks && (
         <fieldset className="space-y-3">
           <div className="flex items-baseline justify-between gap-3">
             <legend className="text-label text-ink">What did you work on?</legend>
@@ -262,26 +339,50 @@ export function ReportComposer({ date, today, report, hint }: { date: string; to
             <Plus /> Add task
           </Button>
         </fieldset>
+        )}
 
-        <div className="space-y-2">
-          <Label htmlFor="summary">
-            Summary <span className="font-normal text-ink-3">(optional if you listed tasks)</span>
-          </Label>
-          <Textarea id="summary" rows={3} {...register("summary")} placeholder="How the day went, in a line or two" aria-invalid={!!errors.summary} maxLength={2000} />
-          {err(errors.summary?.message)}
-        </div>
+        {S.summary.on && (
+          <div className="space-y-2">
+            <Label htmlFor="summary">
+              {S.summary.label} {S.tasks && <span className="font-normal text-ink-3">(optional if you listed tasks)</span>}
+            </Label>
+            <Textarea id="summary" rows={3} {...register("summary")} placeholder="How the day went, in a line or two" aria-invalid={!!errors.summary} maxLength={2000} />
+            {err(errors.summary?.message)}
+          </div>
+        )}
 
+        {reportForm.fields.length > 0 && (
+          <div className="grid gap-5 sm:grid-cols-2">
+            {reportForm.fields.map((f) => (
+              <AnswerField
+                key={f.id}
+                field={f}
+                value={answers[f.id] ?? null}
+                error={answerErrors[f.id]}
+                onChange={(v) => {
+                  setAnswers((a) => ({ ...a, [f.id]: v }));
+                  if (answerErrors[f.id]) setAnswerErrors({});
+                }}
+              />
+            ))}
+          </div>
+        )}
+
+        {(S.tomorrowPlan.on || S.blockers.on) && (
         <div className="grid gap-5 sm:grid-cols-2">
+          {S.tomorrowPlan.on && (
           <div className="space-y-2">
             <Label htmlFor="tomorrowPlan" className="flex items-center gap-1.5">
-              <Sunrise aria-hidden className="size-3.5 text-ink-3" /> Tomorrow&apos;s plan
+              <Sunrise aria-hidden className="size-3.5 text-ink-3" /> {S.tomorrowPlan.label}
             </Label>
             <Textarea id="tomorrowPlan" rows={3} {...register("tomorrowPlan")} placeholder="What you'll pick up next" aria-invalid={!!errors.tomorrowPlan} maxLength={1000} />
             {err(errors.tomorrowPlan?.message)}
           </div>
+          )}
+          {S.blockers.on && (
           <div className="space-y-2">
             <Label htmlFor="blockers" className={cn("flex items-center gap-1.5", blockersText?.trim() && "text-st-absent-fg")}>
-              <OctagonAlert aria-hidden className="size-3.5" /> Blockers
+              <OctagonAlert aria-hidden className="size-3.5" /> {S.blockers.label}
             </Label>
             <Textarea
               id="blockers"
@@ -294,14 +395,22 @@ export function ReportComposer({ date, today, report, hint }: { date: string; to
             />
             {err(errors.blockers?.message)}
           </div>
+          )}
         </div>
+        )}
       </div>
 
       {/* Sticky on phones so the send button is always under the thumb. */}
       <div className="sticky bottom-0 z-10 flex items-center justify-between gap-3 rounded-b-lg border-t border-line bg-raised px-4 py-3 sm:px-6">
         <p className="min-w-0 text-caption text-ink-3 tabular-nums">
-          <span className="font-semibold text-ink">{tasks?.filter((t) => t.title.trim()).length ?? 0}</span> tasks ·{" "}
-          <span className="font-semibold text-ink">{fmtHours(hours)}</span>
+          {S.tasks ? (
+            <>
+              <span className="font-semibold text-ink">{tasks?.filter((t) => t.title.trim()).length ?? 0}</span> tasks ·{" "}
+              <span className="font-semibold text-ink">{fmtHours(hours)}</span>
+            </>
+          ) : (
+            reportForm.name
+          )}
         </p>
         <Button type="submit" size="lg" disabled={pending} aria-busy={pending} className="min-w-32 px-4 md:h-10 md:text-body md:font-medium">
           {pending ? <Loader2 className="animate-spin" /> : <Send />}

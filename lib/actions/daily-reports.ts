@@ -8,7 +8,9 @@ import { notifyUsers } from "@/lib/notifications";
 import { prisma } from "@/lib/prisma";
 import { actionUser, canReachEmployee, Forbidden, scopeEmployeeIds } from "@/lib/session";
 import { addDays, dbToYmd, formatDate, istDate, ymdToDb } from "@/lib/time";
-import { checkReportDate, MAX_BACK_DAYS, reportSchema, reviewSchema, totalHours } from "@/lib/validations/daily-reports";
+import { formForEmployee } from "@/lib/report-forms";
+import { checkReportContent, checkReportDate, keepSections, MAX_BACK_DAYS, reportSchema, reviewSchema, totalHours } from "@/lib/validations/daily-reports";
+import { checkAnswers } from "@/lib/validations/report-forms";
 
 export type ReportResult = { ok: true; id: number; message: string } | { ok: false; error: string; field?: string };
 export type SimpleResult = { ok: true; message: string } | { ok: false; error: string };
@@ -32,14 +34,27 @@ export async function saveDailyReport(input: unknown): Promise<ReportResult> {
     if (!actor.employeeId) return fail("Your sign-in isn't linked to an employee record.");
     const parsed = reportSchema.safeParse(input);
     if (!parsed.success) return fail(parsed.error.issues[0]!.message, String(parsed.error.issues[0]!.path[0] ?? ""));
-    const v = parsed.data;
+
+    // The report form for this person decides which sections count and the extra fields.
+    const reportForm = await formForEmployee(actor.employeeId);
+    const v = keepSections(parsed.data, reportForm.sections);
+    const content = checkReportContent(v, reportForm.sections);
+    if (content) return fail(content.message, content.field);
+    const checked = checkAnswers(reportForm.fields, v.answers);
+    if (!checked.ok) return fail(checked.message, `answer:${checked.fieldId}`);
 
     const employee = await prisma.employee.findUnique({ where: { id: actor.employeeId }, select: { joiningDate: true } });
     const dateError = checkReportDate(v.date, istDate(), employee ? dbToYmd(employee.joiningDate) : null);
     if (dateError) return fail(dateError, "date");
 
     const key = { employeeId_date: { employeeId: actor.employeeId, date: ymdToDb(v.date) } };
-    const data = { tasks: v.tasks as unknown as Prisma.InputJsonValue, summary: v.summary, tomorrowPlan: v.tomorrowPlan, blockers: v.blockers };
+    const data = {
+      tasks: v.tasks as unknown as Prisma.InputJsonValue,
+      summary: v.summary,
+      tomorrowPlan: v.tomorrowPlan,
+      blockers: v.blockers,
+      answers: checked.answers.length ? (checked.answers as unknown as Prisma.InputJsonValue) : Prisma.DbNull,
+    };
     const after = { date: v.date, tasks: v.tasks.length, hours: totalHours(v.tasks), blockers: !!v.blockers };
 
     const saved = await prisma.$transaction(async (tx) => {

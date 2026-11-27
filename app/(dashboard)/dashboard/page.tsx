@@ -1,3 +1,4 @@
+import { LiveRefresh } from "@/components/layout/live-refresh";
 import { CalendarCheck, CalendarDays, ClockAlert, Hourglass, Link2Off, LogIn } from "lucide-react";
 import { MonthCalendar } from "@/components/attendance/month-calendar";
 import { PunchCard } from "@/components/attendance/punch-card";
@@ -48,6 +49,7 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
 
   const myDay = mine && (
     <div className="space-y-6 lg:space-y-8">
+      <LiveRefresh seconds={60} />
       <div className="grid gap-6 lg:grid-cols-[minmax(0,1.45fr)_minmax(0,1fr)]">
         <PunchCard today={mine.today} geofenceEnabled={geofence.enabled} selfieRequired={punch.selfieRequired} writesReports={user.writesReports} />
         <QuickActions stacked writesReports={user.writesReports} />

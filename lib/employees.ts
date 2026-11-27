@@ -19,10 +19,11 @@ export async function nextEmployeeCode(db: Pick<Prisma.TransactionClient, "emplo
  */
 export async function listEmployees(params: EmployeeListParams, reach: number[] | null = null) {
   const inReach: Prisma.EmployeeWhereInput = reach ? { id: { in: reach } } : {};
+  const removed = params.status === "REMOVED";
   const where: Prisma.EmployeeWhereInput = {
-    deletedAt: null,
+    deletedAt: removed ? { not: null } : null,
     ...inReach,
-    ...(params.status !== "ALL" && { status: params.status }),
+    ...(params.status !== "ALL" && params.status !== "REMOVED" && { status: params.status }),
     ...(params.department && { departmentId: params.department }),
     ...(params.q && {
       OR: [
@@ -36,7 +37,7 @@ export async function listEmployees(params: EmployeeListParams, reach: number[] 
   const orderBy: Prisma.EmployeeOrderByWithRelationInput =
     params.sort === "code" ? { code: params.dir } : params.sort === "joined" ? { joiningDate: params.dir } : { fullName: params.dir };
 
-  const [rows, total, counts] = await Promise.all([
+  const [rows, total, counts, removedCount] = await Promise.all([
     prisma.employee.findMany({
       where,
       orderBy: [orderBy, { id: "asc" }],
@@ -51,6 +52,7 @@ export async function listEmployees(params: EmployeeListParams, reach: number[] 
     }),
     prisma.employee.count({ where }),
     prisma.employee.groupBy({ by: ["status"], where: { deletedAt: null, ...inReach }, _count: true }),
+    prisma.employee.count({ where: { deletedAt: { not: null }, ...inReach } }),
   ]);
 
   return {
@@ -61,6 +63,7 @@ export async function listEmployees(params: EmployeeListParams, reach: number[] 
       ACTIVE: counts.find((c) => c.status === "ACTIVE")?._count ?? 0,
       ON_NOTICE: counts.find((c) => c.status === "ON_NOTICE")?._count ?? 0,
       EXITED: counts.find((c) => c.status === "EXITED")?._count ?? 0,
+      REMOVED: removedCount,
     },
     rows: rows.map((e) => ({
       id: e.id,
@@ -75,6 +78,8 @@ export async function listEmployees(params: EmployeeListParams, reach: number[] 
       joiningDate: dbToYmd(e.joiningDate),
       exitDate: e.exitDate ? dbToYmd(e.exitDate) : null,
       status: e.status,
+      /** IST date the record was removed (only in the Removed tab) */
+      removedOn: e.deletedAt ? istDate(e.deletedAt) : null,
       /** Role name, "DISABLED", or null without a sign-in */
       login: e.user ? (e.user.isActive ? (e.user.accessRole?.name ?? "Employee") : "DISABLED") : null,
     })),

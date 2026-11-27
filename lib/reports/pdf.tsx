@@ -1,5 +1,5 @@
 import "server-only";
-import { Document, Page, StyleSheet, Text, View, renderToBuffer } from "@react-pdf/renderer";
+import { Document, Image, Page, StyleSheet, Text, View, renderToBuffer } from "@react-pdf/renderer";
 import { formatValue, isNumeric } from "./definitions";
 import type { ReportColumn, ReportRow } from "./types";
 import type { ExportHeader } from "./xlsx";
@@ -22,6 +22,12 @@ const s = StyleSheet.create({
   total: { flexDirection: "row", borderTopWidth: 1, borderTopColor: INK, paddingVertical: 5, fontFamily: "Helvetica-Bold" },
   empty: { paddingVertical: 24, textAlign: "center", color: MUTED },
   footer: { position: "absolute", bottom: 18, left: 28, right: 28, flexDirection: "row", justifyContent: "space-between", fontSize: 7, color: MUTED },
+  brand: { flexDirection: "row", alignItems: "flex-end", gap: 10 },
+  logo: { height: 34, maxWidth: 110, objectFit: "contain" },
+  address: { fontSize: 7.5, color: MUTED, marginTop: 2, maxWidth: 320 },
+  note: { fontSize: 8, fontFamily: "Helvetica-Oblique", marginBottom: 8 },
+  signs: { flexDirection: "row", justifyContent: "space-between", gap: 24, marginTop: 48 },
+  sign: { flex: 1, borderTopWidth: 0.75, borderTopColor: INK, paddingTop: 4, fontSize: 8 },
 });
 
 /** Relative column widths by kind (names and remarks get more room). */
@@ -51,17 +57,24 @@ function ReportPdf({ h, columns, rows, totals }: { h: ExportHeader; columns: Rep
 
   return (
     <Document title={`${h.title} · ${h.period}`} author={h.company} creator={h.company}>
-      <Page size="A4" orientation="landscape" style={s.page}>
+      <Page size="A4" orientation={h.orientation ?? "landscape"} style={s.page}>
         <View style={s.top} fixed>
-          <View>
-            <Text style={s.company}>{h.company}</Text>
-            <Text style={s.title}>{h.title}</Text>
+          <View style={s.brand}>
+            {/* eslint-disable-next-line jsx-a11y/alt-text -- react-pdf Image, not an HTML img */}
+            {h.logo && <Image style={s.logo} src={{ data: h.logo.data, format: h.logo.format === "jpeg" ? "jpg" : "png" }} />}
+            <View>
+              <Text style={s.company}>{h.company}</Text>
+              {h.address && <Text style={s.address}>{h.address.replace(/\s*\n\s*/g, ", ")}</Text>}
+              <Text style={s.title}>{h.title}</Text>
+            </View>
           </View>
           <View>
             <Text style={s.meta}>Period: {h.period}</Text>
             <Text style={s.meta}>Generated {h.generatedAt}</Text>
           </View>
         </View>
+
+        {h.headerNote && <Text style={s.note}>{h.headerNote}</Text>}
 
         <View style={s.head} fixed>
           {columns.map((c) => (
@@ -91,10 +104,18 @@ function ReportPdf({ h, columns, rows, totals }: { h: ExportHeader; columns: Rep
           </View>
         )}
 
+        {!!h.signatures?.length && (
+          <View style={s.signs} wrap={false}>
+            {h.signatures.map((label) => (
+              <Text key={label} style={s.sign}>
+                {label}
+              </Text>
+            ))}
+          </View>
+        )}
+
         <View style={s.footer} fixed>
-          <Text>
-            {h.company} · {h.title} · {h.period}
-          </Text>
+          <Text>{h.footerNote ? `${h.footerNote} · ` : ""}{h.company} · {h.title} · {h.period}</Text>
           <Text render={({ pageNumber, totalPages }) => `Page ${pageNumber} of ${totalPages}`} />
         </View>
       </Page>

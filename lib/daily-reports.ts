@@ -4,6 +4,8 @@ import { computeFromContext, loadContext } from "@/lib/attendance/service";
 import { prisma } from "@/lib/prisma";
 import { addDays, dbToYmd, formatDate, formatTime, istDate, ymdToDb } from "@/lib/time";
 import { fillableDates, isBlocked, parseTasks, totalHours, type TaskInput } from "@/lib/validations/daily-reports";
+import { formForEmployee } from "@/lib/report-forms";
+import { parseAnswers, type Answer } from "@/lib/validations/report-forms";
 
 /**
  * Daily work reports: read models for the page, the dashboard card and the cron reminder.
@@ -17,6 +19,8 @@ export interface ReportRow {
   summary: string;
   tomorrowPlan: string;
   blockers: string;
+  /** Custom fields of the report form, as sent */
+  answers: Answer[];
   hours: number;
   blocked: boolean;
   /** "06:42 PM" IST */
@@ -55,6 +59,7 @@ function toRow(r: ReportWithReviewer): ReportRow {
     summary: r.summary,
     tomorrowPlan: r.tomorrowPlan,
     blockers: r.blockers,
+    answers: parseAnswers(r.answers),
     hours: totalHours(tasks),
     blocked: isBlocked({ tasks, blockers: r.blockers }),
     submittedAt: formatTime(r.submittedAt),
@@ -82,12 +87,15 @@ export async function myReportsData(employeeId: number, now = new Date()) {
   const employee = await prisma.employee.findUniqueOrThrow({ where: { id: employeeId }, select: { joiningDate: true } });
   const joiningDate = dbToYmd(employee.joiningDate);
   const dates = fillableDates(today, joiningDate);
-  const [reports, hints] = await Promise.all([
+  const [reports, hints, form] = await Promise.all([
     prisma.dailyReport.findMany({ where: { employeeId }, include: reportInclude, orderBy: { date: "desc" }, take: 30 }),
     dates.length ? dayHints([employeeId], dates.at(-1)!, today, now) : new Map<string, DayHint>(),
+    formForEmployee(employeeId),
   ]);
   return {
     today,
+    /** The report form this person fills in */
+    form,
     dates,
     reports: reports.map(toRow),
     hints: Object.fromEntries(dates.map((d) => [d, hints.get(`${employeeId}:${d}`) ?? null])) as Record<string, DayHint | null>,

@@ -1,4 +1,8 @@
 import { PageHeader } from "@/components/layout/page-header";
+import { BackupSection } from "@/components/settings/backup-section";
+import { ExportFormatSection } from "@/components/settings/export-format-section";
+import { ReportFormsSection } from "@/components/settings/report-forms-section";
+import { listBackups } from "@/lib/backup";
 import { CompanySection } from "@/components/settings/company-section";
 import { LeaveTypesSection } from "@/components/settings/leave-types-section";
 import { OrganisationSection } from "@/components/settings/organisation-section";
@@ -9,12 +13,18 @@ import { ShiftsSection } from "@/components/settings/shifts-section";
 import { WorkingWeekSection } from "@/components/settings/working-week-section";
 import { requirePermission } from "@/lib/session";
 import { SETTINGS_TABS, settingsTabSchema, type SettingsTab } from "@/lib/validations/settings";
-import { companyData, leaveTypesData, organisationData, policiesData, punchingData, shiftsData, workingWeekData } from "./data";
+import { companyData, exportFormatData, reportFormsData, leaveTypesData, organisationData, policiesData, punchingData, shiftsData, workingWeekData } from "./data";
 
 export const metadata = { title: "Settings" };
 
-async function Section({ tab }: { tab: SettingsTab }) {
+async function Section({ tab, isSuperAdmin }: { tab: SettingsTab; isSuperAdmin: boolean }) {
   switch (tab) {
+    case "report-forms":
+      return <ReportFormsSection data={await reportFormsData()} />;
+    case "exports":
+      return <ExportFormatSection data={await exportFormatData()} />;
+    case "backup":
+      return <BackupSection backups={isSuperAdmin ? await listBackups() : []} isSuperAdmin={isSuperAdmin} />;
     case "company":
       return <CompanySection company={await companyData()} />;
     case "working-week":
@@ -35,7 +45,7 @@ async function Section({ tab }: { tab: SettingsTab }) {
 }
 
 export default async function SettingsPage({ searchParams }: { searchParams: Promise<Record<string, string | undefined>> }) {
-  await requirePermission("settings.manage");
+  const user = await requirePermission("settings.manage");
   const tab = settingsTabSchema.parse((await searchParams).tab);
   const label = SETTINGS_TABS.find((t) => t.key === tab)!.label;
 
@@ -45,7 +55,7 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
       <div className="grid gap-6 lg:grid-cols-[13.5rem_minmax(0,1fr)] lg:gap-8">
         <SettingsNav active={tab} />
         <div key={tab} className="rise min-w-0">
-          <Section tab={tab} />
+          <Section tab={tab} isSuperAdmin={user.isSuperAdmin} />
         </div>
       </div>
     </div>

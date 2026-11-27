@@ -6,6 +6,8 @@ import { parseReportParams, periodSlug } from "@/lib/reports/params";
 import { routeUser, scopeEmployeeIds } from "@/lib/session";
 import { istDate } from "@/lib/time";
 import { TASK_STATUS_META } from "@/lib/validations/daily-reports";
+import { answerText } from "@/lib/validations/report-forms";
+import { writeLetterhead, writeSignOff } from "@/lib/reports/xlsx";
 
 export const dynamic = "force-dynamic";
 
@@ -43,16 +45,15 @@ export async function GET(req: NextRequest) {
     const wb = new ExcelJS.Workbook();
     wb.creator = header.company;
     wb.created = new Date();
-    const ws = wb.addWorksheet("Daily reports", { views: [{ state: "frozen", ySplit: 5 }], pageSetup: { orientation: "landscape", paperSize: 9, fitToPage: true, fitToWidth: 1, fitToHeight: 0 } });
-    ws.getCell(1, 1).value = header.company;
-    ws.getCell(1, 1).font = { bold: true, size: 14 };
-    ws.getCell(2, 1).value = header.title;
-    ws.getCell(2, 1).font = { bold: true, size: 12 };
-    ws.getCell(3, 1).value = `Period: ${header.period} · ${reports.length} report${reports.length === 1 ? "" : "s"} · Generated ${header.generatedAt}`;
-    ws.getCell(3, 1).font = { size: 10, color: { argb: "FF6B685F" } };
+    // Custom report-form fields get a column each, in the order they first appear.
+    const answerLabels = [...new Set(reports.flatMap((r) => r.answers.map((a) => a.label)))];
+    const columns = [...COLUMNS, ...answerLabels.map((label) => ({ header: label, key: `answer:${label}`, width: 24 }))];
+    const ws = wb.addWorksheet("Daily reports", { pageSetup: { orientation: header.orientation ?? "landscape", paperSize: 9, fitToPage: true, fitToWidth: 1, fitToHeight: 0 } });
+    const H = writeLetterhead(wb, ws, { ...header, period: `${header.period} · ${reports.length} report${reports.length === 1 ? "" : "s"}` }, columns.length);
+    ws.views = [{ state: "frozen", ySplit: H }];
 
-    const head = ws.getRow(5);
-    COLUMNS.forEach((c, i) => {
+    const head = ws.getRow(H);
+    columns.forEach((c, i) => {
       ws.getColumn(i + 1).width = c.width;
       const cell = head.getCell(i + 1);
       cell.value = c.header;
@@ -61,9 +62,9 @@ export async function GET(req: NextRequest) {
       cell.border = { bottom: { style: "thin", color: { argb: "FFB5B1A6" } } };
       cell.alignment = { vertical: "middle", horizontal: c.key === "hours" ? "right" : "left" };
     });
-    ws.autoFilter = { from: { row: 5, column: 1 }, to: { row: 5, column: COLUMNS.length } };
+    ws.autoFilter = { from: { row: H, column: 1 }, to: { row: H, column: columns.length } };
 
-    let row = 6;
+    let row = H + 1;
     for (const r of reports) {
       const tasks = r.tasks.length ? r.tasks : [null];
       for (const t of tasks) {
@@ -82,6 +83,10 @@ export async function GET(req: NextRequest) {
           r.reviewed?.by ?? "",
           r.reviewed?.at ?? "",
           r.reviewed?.comment ?? "",
+          ...answerLabels.map((label) => {
+            const a = r.answers.find((x) => x.label === label);
+            return a ? answerText(a) : "";
+          }),
         ];
         const xr = ws.getRow(row++);
         values.forEach((v, i) => (xr.getCell(i + 1).value = v));
@@ -92,6 +97,7 @@ export async function GET(req: NextRequest) {
       }
     }
 
+    writeSignOff(ws, header, row, columns.length);
     return fileResponse(await wb.xlsx.writeBuffer(), XLSX_TYPE, `daily-reports_${periodSlug(p.from, p.to)}.xlsx`);
   } catch (err) {
     console.error("daily reports export failed", err);

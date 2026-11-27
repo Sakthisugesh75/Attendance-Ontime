@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
 import {
   blankTask,
+  checkReportContent,
+  keepSections,
   checkReportDate,
   fillableDates,
   fmtHours,
@@ -13,6 +15,7 @@ import {
   totalHours,
   type ReportInput,
 } from "@/lib/validations/daily-reports";
+import { DEFAULT_SECTIONS } from "@/lib/validations/report-forms";
 
 const base: ReportInput = {
   date: "2026-11-05",
@@ -39,11 +42,18 @@ describe("reportSchema", () => {
     expect(r.data!.tasks).toHaveLength(2);
   });
 
-  it("needs at least one task or a summary", () => {
-    const empty = reportSchema.safeParse({ ...base, tasks: [blankTask()] });
-    expect(empty.success).toBe(false);
-    expect(empty.error!.issues[0]!.path).toEqual(["summary"]);
-    expect(reportSchema.safeParse({ ...base, tasks: [], summary: "Client meetings all day" }).success).toBe(true);
+  it("needs at least one task or a summary (standard form)", () => {
+    const empty = reportSchema.parse({ ...base, tasks: [blankTask()] });
+    expect(checkReportContent(empty, DEFAULT_SECTIONS)).toEqual({ field: "summary", message: expect.any(String) });
+    expect(checkReportContent(reportSchema.parse({ ...base, tasks: [], summary: "Client meetings all day" }), DEFAULT_SECTIONS)).toBeNull();
+  });
+
+  it("follows the sections a form keeps", () => {
+    const onlyTasks = { ...DEFAULT_SECTIONS, summary: { on: false, label: "Summary" } };
+    expect(checkReportContent({ tasks: [], summary: "x" }, onlyTasks)?.field).toBe("tasks");
+    const none = { tasks: false, summary: { on: false, label: "S" }, tomorrowPlan: { on: false, label: "T" }, blockers: { on: false, label: "B" } };
+    expect(checkReportContent({ tasks: [], summary: "" }, none)).toBeNull();
+    expect(keepSections({ tasks: [1], summary: "s", tomorrowPlan: "t", blockers: "b" }, none)).toEqual({ tasks: [], summary: "", tomorrowPlan: "", blockers: "" });
   });
 
   it("asks for a title when hours were entered", () => {

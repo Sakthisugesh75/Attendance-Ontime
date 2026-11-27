@@ -29,6 +29,10 @@ import {
   quotaRuleSchema,
   shiftSchema,
   weeklyOffSchema,
+  groupWeeklyOffSchema,
+  type GroupWeeklyOffInput,
+  exportFormatSchema,
+  type ExportFormat,
   type CapsFormInput,
   type CompanyFormInput,
   type CustomDateInput,
@@ -38,6 +42,7 @@ import {
   type ShiftInput,
   type WeeklyOffInput,
 } from "@/lib/validations/settings";
+import { reportFormSchema, type ReportFormInput } from "@/lib/validations/report-forms";
 import type { QuotaRuleInput } from "@/lib/validations/settings";
 
 export type SettingsResult = { ok: true; message: string } | { ok: false; error: string; field?: string };
@@ -70,7 +75,7 @@ function revalidateSettings() {
  * Re-stores computed statuses for employees affected by a change to shifts or weekly offs.
  * Only past days are rewritten (recomputeRange stops at yesterday) and never more than 400 days back.
  */
-async function recomputeEmployees(from: string, to: string, scope: { shiftId?: number; includeUnassigned?: boolean } = {}) {
+async function recomputeEmployees(from: string, to: string, scope: { shiftId?: number; includeUnassigned?: boolean; departmentId?: number; designationId?: number } = {}) {
   const today = istDate();
   const floor = addDays(today, -MAX_RECOMPUTE_DAYS);
   const start = from < floor ? floor : from;
@@ -85,6 +90,8 @@ async function recomputeEmployees(from: string, to: string, scope: { shiftId?: n
   const employees = await prisma.employee.findMany({
     where: {
       deletedAt: null,
+      ...(scope.departmentId !== undefined && { departmentId: scope.departmentId }),
+      ...(scope.designationId !== undefined && { designationId: scope.designationId }),
       joiningDate: { lte: ymdToDb(end) },
       AND: [{ OR: [{ exitDate: null }, { exitDate: { gte: ymdToDb(start) } }] }, ...(shiftFilter.length ? [{ OR: shiftFilter }] : [])],
     },
@@ -171,6 +178,19 @@ export async function saveCaps(input: CapsFormInput): Promise<SettingsResult> {
   });
 }
 
+export async function saveExportFormat(input: ExportFormat): Promise<SettingsResult> {
+  return guarded("saveExportFormat", async () => {
+    const actor = await actionUser("settings.manage");
+    const parsed = exportFormatSchema.safeParse(input);
+    if (!parsed.success) return zodFail(parsed.error);
+    const before = await getSetting("exportFormat");
+    await setSetting("exportFormat", parsed.data);
+    await writeAudit({ actorId: actor.id, action: "UPDATE", entity: "Setting", entityId: "exportFormat", before, after: parsed.data });
+    revalidateSettings();
+    return ok("Export format saved");
+  });
+}
+
 export async function savePunching(input: PunchingFormInput): Promise<SettingsResult> {
   return guarded("savePunching", async () => {
     const actor = await actionUser("settings.manage");
@@ -188,8 +208,11 @@ export async function savePunching(input: PunchingFormInput): Promise<SettingsRe
 
 // ---- Weekly offs ------------------------------------------------------------------
 
+/** Company-wide rules only (not tied to a shift, department or designation). */
+const COMPANY_RULE = { shiftId: null, departmentId: null, designationId: null };
+
 async function companyRules() {
-  const rows = await prisma.weeklyOffRule.findMany({ where: { shiftId: null }, orderBy: { effectiveFrom: "asc" } });
+  const rows = await prisma.weeklyOffRule.findMany({ where: COMPANY_RULE, orderBy: { effectiveFrom: "asc" } });
   return rows.map((r) => ({
     id: r.id,
     shiftId: null,
@@ -244,6 +267,64 @@ export async function scheduleWeeklyOff(input: WeeklyOffInput): Promise<Settings
     await recomputeEmployees(effectiveFrom, next ? addDays(next.effectiveFrom, -1) : today);
     revalidateSettings();
     return ok(effectiveFrom > today ? `${label} from ${formatDate(effectiveFrom)}. Scheduled.` : `${label} from ${formatDate(effectiveFrom)}`);
+  });
+}
+
+/**
+ * Starts a weekly-off policy for one department or designation from a date (or, with
+ * mode "company", makes that group follow the company policy again from the date).
+ * Like the company policy, rules that have started are never edited.
+ */
+export async function scheduleGroupWeeklyOff(input: GroupWeeklyOffInput): Promise<SettingsResult> {
+  return guarded("scheduleGroupWeeklyOff", async () => {
+    const actor = await actionUser("settings.manage");
+    const parsed = groupWeeklyOffSchema.safeParse(input);
+    if (!parsed.success) return zodFail(parsed.error);
+    const { target, targetId, mode, saturday, sundayOff, effectiveFrom } = parsed.data;
+    const today = istDate();
+    if (effectiveFrom < addDays(today, -MAX_RECOMPUTE_DAYS)) return fail("The start date can be at most 400 days back.", "effectiveFrom");
+
+    const group =
+      target === "department"
+        ? await prisma.department.findUnique({ where: { id: targetId }, select: { name: true } })
+        : await prisma.designation.findUnique({ where: { id: targetId }, select: { name: true } });
+    if (!group) return fail(`Pick a ${target}.`, "targetId");
+    const where = target === "department" ? { departmentId: targetId, designationId: null } : { designationId: targetId };
+    const rows = await prisma.weeklyOffRule.findMany({ where, orderBy: { effectiveFrom: "asc" } });
+    const rules = rows.map((r) => ({ ...r, effectiveFrom: dbToYmd(r.effectiveFrom), pattern: r.pattern as WeeklyOffPattern }));
+    const sameDay = rules.find((r) => r.effectiveFrom === effectiveFrom);
+    const next = rules.find((r) => r.effectiveFrom > effectiveFrom);
+    if (sameDay && sameDay.effectiveFrom <= today) return fail("A policy for this group already starts on this date. Pick a later date.", "effectiveFrom");
+    const previous = rules.filter((r) => r.effectiveFrom < effectiveFrom).at(-1) ?? null;
+    const base = sameDay ?? previous;
+
+    const inherit = mode === "company";
+    const pattern: WeeklyOffPattern = inherit ? {} : buildPattern(saturday, sundayOff);
+    const label = inherit ? "Company policy" : describePattern(pattern);
+    if (inherit && (!base || base.inherit)) return fail(`${group.name} already follows the company policy on ${formatDate(effectiveFrom)}.`, "mode");
+    if (!inherit && base && !base.inherit && JSON.stringify(pattern) === JSON.stringify(normalise(base.pattern))) {
+      return fail(`${group.name} already has ${label} on ${formatDate(effectiveFrom)}.`, "saturday");
+    }
+
+    const data = { pattern: pattern as Prisma.InputJsonValue, label, inherit, customOffDates: [], customWorkDates: [] };
+    const saved = sameDay
+      ? await prisma.weeklyOffRule.update({ where: { id: sameDay.id }, data })
+      : await prisma.weeklyOffRule.create({
+          data: { ...data, effectiveFrom: ymdToDb(effectiveFrom), ...(target === "department" ? { departmentId: targetId } : { designationId: targetId }) },
+        });
+    await writeAudit({
+      actorId: actor.id,
+      action: sameDay ? "UPDATE" : "CREATE",
+      entity: "WeeklyOffRule",
+      entityId: saved.id,
+      before: base ? { effectiveFrom: base.effectiveFrom, label: base.label } : undefined,
+      after: { [target]: group.name, effectiveFrom, label },
+    });
+
+    await recomputeEmployees(effectiveFrom, next ? addDays(next.effectiveFrom, -1) : today, target === "department" ? { departmentId: targetId } : { designationId: targetId });
+    revalidateSettings();
+    const when = effectiveFrom > today ? `from ${formatDate(effectiveFrom)}. Scheduled.` : `from ${formatDate(effectiveFrom)}`;
+    return ok(inherit ? `${group.name} follows the company policy ${when}` : `${group.name}: ${label} ${when}`);
   });
 }
 
@@ -423,15 +504,28 @@ export async function saveLeaveType(id: number | null, input: LeaveTypeInput): P
     if (id !== null) z.number().int().positive().parse(id);
     const parsed = leaveTypeSchema.safeParse(input);
     if (!parsed.success) return zodFail(parsed.error);
-    const v = parsed.data;
-    const before = id ? await prisma.leaveType.findUnique({ where: { id } }) : null;
+    const { designationIds: wanted, ...v } = parsed.data;
+    const before = id ? await prisma.leaveType.findUnique({ where: { id }, include: { designations: { select: { designationId: true } } } }) : null;
     if (id && !before) return fail("This leave type no longer exists.");
     const clash = await prisma.leaveType.findFirst({ where: { code: v.code, ...(id && { id: { not: id } }) } });
     if (clash) return fail(`${v.code} is already used by ${clash.name}.`, "code");
+    const designationIds = (await prisma.designation.findMany({ where: { id: { in: [...new Set(wanted)] } }, select: { id: true } })).map((d) => d.id);
 
     const saved = await prisma.$transaction(async (tx) => {
       const t = id ? await tx.leaveType.update({ where: { id }, data: v }) : await tx.leaveType.create({ data: v });
-      await writeAudit({ actorId: actor.id, action: id ? "UPDATE" : "CREATE", entity: "LeaveType", entityId: t.id, before: before ? leaveSnapshot(before) : undefined, after: leaveSnapshot(t) }, tx);
+      await tx.leaveTypeDesignation.deleteMany({ where: { leaveTypeId: t.id } });
+      if (designationIds.length) await tx.leaveTypeDesignation.createMany({ data: designationIds.map((designationId) => ({ leaveTypeId: t.id, designationId })) });
+      await writeAudit(
+        {
+          actorId: actor.id,
+          action: id ? "UPDATE" : "CREATE",
+          entity: "LeaveType",
+          entityId: t.id,
+          before: before ? { ...leaveSnapshot(before), designationIds: before.designations.map((d) => d.designationId) } : undefined,
+          after: { ...leaveSnapshot(t), designationIds },
+        },
+        tx,
+      );
       return t;
     });
     revalidateSettings();
@@ -649,5 +743,74 @@ export async function deleteLookup(kindInput: LookupKind, id: number): Promise<S
     revalidateSettings();
     revalidatePath("/employees");
     return ok(`${row.name} deleted`);
+  });
+}
+
+// ---- Daily report forms ------------------------------------------------------------
+
+export async function saveReportForm(id: number | null, input: ReportFormInput): Promise<SettingsResult> {
+  return guarded("saveReportForm", async () => {
+    const actor = await actionUser("settings.manage");
+    if (id !== null) z.number().int().positive().parse(id);
+    const parsed = reportFormSchema.safeParse(input);
+    if (!parsed.success) return zodFail(parsed.error);
+    const v = parsed.data;
+    const before = id ? await prisma.reportTemplate.findUnique({ where: { id } }) : null;
+    if (id && !before) return fail("This form no longer exists.");
+    const ids = new Set<string>();
+    for (const f of v.fields) {
+      if (ids.has(f.id)) return fail("Two fields share an id. Remove one and add it again.");
+      ids.add(f.id);
+    }
+    // The default form is for everyone, so it never has targets; the others need at least one.
+    const isDefault = !!before?.isDefault;
+    const designationIds = isDefault ? [] : [...new Set(v.designationIds)];
+    const departmentIds = isDefault ? [] : [...new Set(v.departmentIds)];
+    if (!isDefault && !designationIds.length && !departmentIds.length) return fail("Pick the designations or departments this form is for.", "designationIds");
+    // A designation / department can only use one form.
+    const others = await prisma.reportTemplate.findMany({ where: { isDefault: false, ...(id && { id: { not: id } }) } });
+    for (const o of others) {
+      const taken = (o.designationIds as number[]).find((d) => designationIds.includes(d)) ?? null;
+      if (taken !== null) {
+        const name = (await prisma.designation.findUnique({ where: { id: taken }, select: { name: true } }))?.name ?? "A designation";
+        return fail(`${name} already uses the form "${o.name}".`, "designationIds");
+      }
+      const dept = (o.departmentIds as number[]).find((d) => departmentIds.includes(d)) ?? null;
+      if (dept !== null) {
+        const name = (await prisma.department.findUnique({ where: { id: dept }, select: { name: true } }))?.name ?? "A department";
+        return fail(`${name} already uses the form "${o.name}".`, "departmentIds");
+      }
+    }
+    const data = {
+      name: v.name,
+      sections: v.sections as unknown as Prisma.InputJsonValue,
+      fields: v.fields as unknown as Prisma.InputJsonValue,
+      designationIds,
+      departmentIds,
+    };
+    await prisma.$transaction(async (tx) => {
+      const t = id ? await tx.reportTemplate.update({ where: { id }, data }) : await tx.reportTemplate.create({ data: { ...data, isDefault: false } });
+      await writeAudit({ actorId: actor.id, action: id ? "UPDATE" : "CREATE", entity: "ReportTemplate", entityId: t.id, after: { name: v.name, fields: v.fields.length, designationIds, departmentIds } }, tx);
+    });
+    revalidateSettings();
+    revalidatePath("/daily-reports");
+    return ok(id ? "Form saved" : "Form added");
+  });
+}
+
+export async function deleteReportForm(id: number): Promise<SettingsResult> {
+  return guarded("deleteReportForm", async () => {
+    const actor = await actionUser("settings.manage");
+    z.number().int().positive().parse(id);
+    const t = await prisma.reportTemplate.findUnique({ where: { id } });
+    if (!t) return fail("This form no longer exists.");
+    if (t.isDefault) return fail("The default form can't be deleted. Change it instead.");
+    await prisma.$transaction(async (tx) => {
+      await tx.reportTemplate.delete({ where: { id } });
+      await writeAudit({ actorId: actor.id, action: "DELETE", entity: "ReportTemplate", entityId: id, before: { name: t.name } }, tx);
+    });
+    revalidateSettings();
+    revalidatePath("/daily-reports");
+    return ok(`${t.name} deleted. Those people now use the default form.`);
   });
 }

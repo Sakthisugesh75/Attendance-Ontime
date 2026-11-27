@@ -1,5 +1,6 @@
 "use client";
 
+import { LiveRefresh } from "@/components/layout/live-refresh";
 import { ClipboardPen, Plus } from "lucide-react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useState, useTransition } from "react";
@@ -73,6 +74,7 @@ export function RequestsView({ view, showTabs, mine, approvals, openNew, recordF
 
   return (
     <div className="space-y-6">
+      <LiveRefresh />
       <PageHeader
         eyebrow={view === "approvals" ? "Approvals" : `Requests · ${mine?.year ?? ""}`}
         title="Requests"

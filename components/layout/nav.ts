@@ -5,9 +5,11 @@ import {
   FileSpreadsheet,
   Grid3x3,
   Inbox,
+  Laptop,
   LayoutDashboard,
   Megaphone,
   NotebookPen,
+  Receipt,
   ScrollText,
   Settings,
   ShieldCheck,
@@ -45,6 +47,13 @@ export const NAV: { label: string; items: NavItem[] }[] = [
       { href: "/muster", label: "Muster roll", icon: Grid3x3, perm: "attendance.view", keywords: "monthly grid register edit attendance" },
       { href: "/holidays", label: "Holidays", icon: CalendarHeart, keywords: "calendar festival" },
       { href: "/announcements", label: "Announcements", icon: Megaphone, keywords: "notice board news circular birthday" },
+    ],
+  },
+  {
+    label: "Finance",
+    items: [
+      { href: "/expenses", label: "Expenses", icon: Receipt, needs: "employee", perm: "expenses.manage", keywords: "claim reimbursement bill travel food fuel approve pay" },
+      { href: "/assets", label: "Assets", icon: Laptop, needs: "employee", perm: "assets.manage", keywords: "laptop phone sim id card inventory hand over return" },
     ],
   },
   {

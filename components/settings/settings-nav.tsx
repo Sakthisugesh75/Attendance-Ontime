@@ -1,4 +1,4 @@
-import { Building2, CalendarRange, Clock, MapPin, Network, Plane, SlidersHorizontal, type LucideIcon } from "lucide-react";
+import { Building2, CalendarRange, ClipboardList, Clock, DatabaseBackup, FileText, MapPin, Network, Plane, SlidersHorizontal, type LucideIcon } from "lucide-react";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
 import { SETTINGS_TABS, type SettingsTab } from "@/lib/validations/settings";
@@ -11,6 +11,9 @@ const ICONS: Record<SettingsTab, LucideIcon> = {
   policies: SlidersHorizontal,
   punching: MapPin,
   organisation: Network,
+  "report-forms": ClipboardList,
+  exports: FileText,
+  backup: DatabaseBackup,
 };
 
 const HINTS: Record<SettingsTab, string> = {
@@ -21,6 +24,9 @@ const HINTS: Record<SettingsTab, string> = {
   policies: "WFH and permission caps",
   punching: "Geofence and selfie",
   organisation: "Departments, designations",
+  "report-forms": "Daily report fields",
+  exports: "Letterhead, signatures, columns",
+  backup: "Download and restore data",
 };
 
 /** Sub-navigation: sticky column on desktop, horizontally scrolling tabs on phones. */

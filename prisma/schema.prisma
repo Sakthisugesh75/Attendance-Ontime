@@ -96,16 +96,20 @@ model PasswordResetToken {
 }
 
 model Department {
-  id        Int        @id @default(autoincrement())
-  name      String     @unique @db.VarChar(100)
-  employees Employee[]
+  id             Int             @id @default(autoincrement())
+  name           String          @unique @db.VarChar(100)
+  employees      Employee[]
+  weeklyOffRules WeeklyOffRule[]
 }
 
 model Designation {
-  id          Int              @id @default(autoincrement())
-  name        String           @unique @db.VarChar(100)
-  employees   Employee[]
-  leaveQuotas LeaveQuotaRule[]
+  id             Int                    @id @default(autoincrement())
+  name           String                 @unique @db.VarChar(100)
+  employees      Employee[]
+  leaveQuotas    LeaveQuotaRule[]
+  leaveTypes     LeaveTypeDesignation[]
+  expenseLimits  ExpenseLimit[]
+  weeklyOffRules WeeklyOffRule[]
 }
 
 enum EmployeeStatus {
@@ -147,6 +151,9 @@ model Employee {
   balances     LeaveBalance[]
   dailyReports DailyReport[]
   leaveQuotas  LeaveQuotaRule[]
+  expenses     ExpenseClaim[]
+  assets       Asset[]
+  assetEvents  AssetEvent[]
 
   @@index([status])
   @@index([deletedAt])
@@ -208,15 +215,25 @@ model ShiftAssignment {
 model WeeklyOffRule {
   id              Int      @id @default(autoincrement())
   shiftId         Int?
+  /// Set for a department's own rule (beats shift and company rules)
+  departmentId    Int?
+  /// Set for a designation's own rule (beats every other rule)
+  designationId   Int?
+  /// "Follow the next level again" from effectiveFrom: ends a group rule without rewriting history
+  inherit         Boolean  @default(false)
   effectiveFrom   DateTime @db.Date
   pattern         Json
   customOffDates  Json?
   customWorkDates Json?
   label           String?  @db.VarChar(100)
 
-  shift Shift? @relation(fields: [shiftId], references: [id], onDelete: Cascade)
+  shift       Shift?       @relation(fields: [shiftId], references: [id], onDelete: Cascade)
+  department  Department?  @relation(fields: [departmentId], references: [id], onDelete: Cascade)
+  designation Designation? @relation(fields: [designationId], references: [id], onDelete: Cascade)
 
   @@index([effectiveFrom])
+  @@index([departmentId])
+  @@index([designationId])
 }
 
 enum HolidayType {
@@ -364,9 +381,11 @@ model LeaveType {
   maxCarryForward Decimal @default(0) @db.Decimal(5, 1)
   isActive        Boolean @default(true)
 
-  balances LeaveBalance[]
-  requests AttendanceRequest[]
-  quotas   LeaveQuotaRule[]
+  balances     LeaveBalance[]
+  requests     AttendanceRequest[]
+  quotas       LeaveQuotaRule[]
+  /// Designations allowed to use this leave type; none = everyone
+  designations LeaveTypeDesignation[]
 }
 
 /// A custom yearly quota for one leave type, for everyone with a designation or for one employee.
@@ -463,6 +482,8 @@ model DailyReport {
   summary       String    @default("") @db.VarChar(2000)
   tomorrowPlan  String    @default("") @db.VarChar(1000)
   blockers      String    @default("") @db.VarChar(1000)
+  /// Custom fields from the report form: [{ id, label, type, value }] (labels kept as they were when sent)
+  answers       Json?
   submittedAt   DateTime  @default(now()) @db.DateTime(3)
   updatedAt     DateTime  @updatedAt @db.DateTime(3)
   reviewedById  Int?
@@ -539,4 +560,175 @@ model CompanySetting {
   key       String   @id @db.VarChar(100)
   value     Json
   updatedAt DateTime @updatedAt @db.DateTime(3)
+}
+
+// ---------------------------------------------------------------------------
+// Leave types limited to designations
+// ---------------------------------------------------------------------------
+
+/// A leave type with at least one row here can only be used by employees with one of these designations.
+model LeaveTypeDesignation {
+  leaveTypeId   Int
+  designationId Int
+
+  leaveType   LeaveType   @relation(fields: [leaveTypeId], references: [id], onDelete: Cascade)
+  designation Designation @relation(fields: [designationId], references: [id], onDelete: Cascade)
+
+  @@id([leaveTypeId, designationId])
+  @@index([designationId])
+}
+
+// ---------------------------------------------------------------------------
+// Expense claims
+// ---------------------------------------------------------------------------
+
+model ExpenseCategory {
+  id              Int      @id @default(autoincrement())
+  name            String   @unique @db.VarChar(60)
+  /// Most one claim may be for (null = no limit). A designation limit wins over this.
+  defaultLimit    Decimal? @db.Decimal(10, 2)
+  receiptRequired Boolean  @default(true)
+  isActive        Boolean  @default(true)
+  createdAt       DateTime @default(now()) @db.DateTime(3)
+
+  limits ExpenseLimit[]
+  claims ExpenseClaim[]
+}
+
+/// Per-claim limit for one category and designation.
+model ExpenseLimit {
+  id            Int     @id @default(autoincrement())
+  categoryId    Int
+  designationId Int
+  maxAmount     Decimal @db.Decimal(10, 2)
+
+  category    ExpenseCategory @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  designation Designation     @relation(fields: [designationId], references: [id], onDelete: Cascade)
+
+  @@unique([categoryId, designationId])
+}
+
+/// PENDING_MANAGER → PENDING_HR → APPROVED → PAID; REJECTED or CANCELLED end it.
+enum ExpenseStatus {
+  PENDING_MANAGER
+  PENDING_HR
+  APPROVED
+  PAID
+  REJECTED
+  CANCELLED
+}
+
+/// Decisions keep the decider's id and name (no foreign key), so history survives deleted sign-ins.
+model ExpenseClaim {
+  id             Int           @id @default(autoincrement())
+  employeeId     Int
+  categoryId     Int
+  expenseDate    DateTime      @db.Date
+  amount         Decimal       @db.Decimal(10, 2)
+  description    String        @db.VarChar(1000)
+  receiptPath    String?       @db.VarChar(255)
+  status         ExpenseStatus @default(PENDING_MANAGER)
+  managerById    Int?
+  managerByName  String?       @db.VarChar(150)
+  managerAt      DateTime?     @db.DateTime(3)
+  managerComment String?       @db.VarChar(500)
+  hrById         Int?
+  hrByName       String?       @db.VarChar(150)
+  hrAt           DateTime?     @db.DateTime(3)
+  hrComment      String?       @db.VarChar(500)
+  paidById       Int?
+  paidByName     String?       @db.VarChar(150)
+  paidAt         DateTime?     @db.DateTime(3)
+  paymentRef     String?       @db.VarChar(100)
+  createdAt      DateTime      @default(now()) @db.DateTime(3)
+  updatedAt      DateTime      @updatedAt @db.DateTime(3)
+
+  employee Employee        @relation(fields: [employeeId], references: [id])
+  category ExpenseCategory @relation(fields: [categoryId], references: [id])
+
+  @@index([employeeId, expenseDate])
+  @@index([status])
+}
+
+// ---------------------------------------------------------------------------
+// Assets
+// ---------------------------------------------------------------------------
+
+enum AssetStatus {
+  AVAILABLE
+  ASSIGNED
+  REPAIR
+  RETIRED
+}
+
+enum AssetCondition {
+  NEW
+  GOOD
+  FAIR
+  DAMAGED
+}
+
+model Asset {
+  id           Int            @id @default(autoincrement())
+  /// Asset tag printed on the item, e.g. AST001
+  tag          String         @unique @db.VarChar(30)
+  name         String         @db.VarChar(120)
+  /// Laptop, Phone, SIM, ID card, … (free text, suggested from existing ones)
+  category     String         @db.VarChar(60)
+  serialNo     String?        @db.VarChar(100)
+  purchaseDate DateTime?      @db.Date
+  cost         Decimal?       @db.Decimal(10, 2)
+  status       AssetStatus    @default(AVAILABLE)
+  condition    AssetCondition @default(GOOD)
+  notes        String         @default("") @db.VarChar(1000)
+  /// Current holder (set while ASSIGNED)
+  employeeId   Int?
+  assignedAt   DateTime?      @db.Date
+  createdAt    DateTime       @default(now()) @db.DateTime(3)
+  updatedAt    DateTime       @updatedAt @db.DateTime(3)
+
+  employee Employee?    @relation(fields: [employeeId], references: [id])
+  events   AssetEvent[]
+
+  @@index([status])
+  @@index([employeeId])
+}
+
+/// History of an asset: created, assigned, returned, repair, retired, edited.
+model AssetEvent {
+  id         Int             @id @default(autoincrement())
+  assetId    Int
+  action     String          @db.VarChar(20)
+  employeeId Int?
+  condition  AssetCondition?
+  note       String          @default("") @db.VarChar(500)
+  actorId    Int?
+  actorName  String          @default("") @db.VarChar(150)
+  createdAt  DateTime        @default(now()) @db.DateTime(3)
+
+  asset    Asset     @relation(fields: [assetId], references: [id], onDelete: Cascade)
+  employee Employee? @relation(fields: [employeeId], references: [id], onDelete: SetNull)
+
+  @@index([assetId, createdAt])
+}
+
+// ---------------------------------------------------------------------------
+// Daily report forms
+// ---------------------------------------------------------------------------
+
+/// A daily report form. The default one (isDefault) is used when no designation / department form matches.
+model ReportTemplate {
+  id             Int      @id @default(autoincrement())
+  name           String   @db.VarChar(80)
+  isDefault      Boolean  @default(false)
+  /// Built-in sections: { tasks: bool, summary: { on, label }, tomorrowPlan: { on, label }, blockers: { on, label } }
+  sections       Json
+  /// Extra fields: [{ id, label, type: text|textarea|number|select|yesno|date, required, options?: string[], hint? }]
+  fields         Json
+  /// Designation ids this form is for (takes precedence over departments)
+  designationIds Json
+  /// Department ids this form is for
+  departmentIds  Json
+  createdAt      DateTime @default(now()) @db.DateTime(3)
+  updatedAt      DateTime @updatedAt @db.DateTime(3)
 }

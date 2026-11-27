@@ -5,6 +5,12 @@ export type WeeklyOffPattern = Partial<Record<string, "ALL" | number[]>>;
 
 export interface WeeklyOffRuleLike {
   shiftId: number | null;
+  /** A department's own rule */
+  departmentId?: number | null;
+  /** A designation's own rule */
+  designationId?: number | null;
+  /** From effectiveFrom this group follows the next level again */
+  inherit?: boolean;
   effectiveFrom: string;
   pattern: WeeklyOffPattern;
   customOffDates?: string[] | null;
@@ -24,15 +30,40 @@ export function matchesPattern(pattern: WeeklyOffPattern, ymd: string): boolean 
   return rule === "ALL" || rule.includes(nthWeekdayOfMonth(ymd));
 }
 
-/** The rule in force on a date: a shift-specific rule beats the company-wide one. */
-export function ruleInForce<R extends WeeklyOffRuleLike>(rules: R[], ymd: string, shiftId: number | null): R | null {
-  const pick = (list: R[]) =>
-    list.filter((r) => r.effectiveFrom <= ymd).sort((a, b) => b.effectiveFrom.localeCompare(a.effectiveFrom))[0] ?? null;
-  return (shiftId !== null ? pick(rules.filter((r) => r.shiftId === shiftId)) : null) ?? pick(rules.filter((r) => r.shiftId === null));
+/** Who a rule is looked up for: their shift, department and designation on that day. */
+export interface OffScope {
+  shiftId: number | null;
+  departmentId?: number | null;
+  designationId?: number | null;
 }
 
-export function isWeeklyOff(rules: WeeklyOffRuleLike[], ymd: string, shiftId: number | null): boolean {
-  const rule = ruleInForce(rules, ymd, shiftId);
+/** A company-wide rule (not tied to a shift, department or designation). */
+export const isCompanyRule = (r: WeeklyOffRuleLike) => r.shiftId === null && !r.departmentId && !r.designationId;
+
+/**
+ * The rule in force on a date. Most specific wins: designation, then department, then shift,
+ * then the company rule. Within a level the latest rule that has started applies; when that is
+ * an "inherit" rule, the level is skipped from that date. A bare shift id (or null) looks up
+ * only shift and company rules.
+ */
+export function ruleInForce<R extends WeeklyOffRuleLike>(rules: R[], ymd: string, scope: number | null | OffScope): R | null {
+  const s: OffScope = scope !== null && typeof scope === "object" ? scope : { shiftId: scope };
+  const pick = (list: R[]) =>
+    list.filter((r) => r.effectiveFrom <= ymd).sort((a, b) => b.effectiveFrom.localeCompare(a.effectiveFrom))[0] ?? null;
+  const levels: R[][] = [
+    s.designationId ? rules.filter((r) => r.designationId === s.designationId) : [],
+    s.departmentId ? rules.filter((r) => r.departmentId === s.departmentId && !r.designationId) : [],
+    s.shiftId !== null ? rules.filter((r) => r.shiftId === s.shiftId && !r.departmentId && !r.designationId) : [],
+  ];
+  for (const level of levels) {
+    const r = pick(level);
+    if (r && !r.inherit) return r;
+  }
+  return pick(rules.filter(isCompanyRule));
+}
+
+export function isWeeklyOff(rules: WeeklyOffRuleLike[], ymd: string, scope: number | null | OffScope): boolean {
+  const rule = ruleInForce(rules, ymd, scope);
   if (!rule) return false;
   if (rule.customWorkDates?.includes(ymd)) return false;
   if (rule.customOffDates?.includes(ymd)) return true;

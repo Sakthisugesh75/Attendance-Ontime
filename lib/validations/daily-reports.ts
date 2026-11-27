@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { addDays } from "@/lib/time";
+import { answerInput, type FormSections } from "./report-forms";
 
 /**
  * Daily work reports: the form schema shared by the report form (client) and the server
@@ -45,13 +46,32 @@ export const reportSchema = z
     summary: z.string().trim().max(2000, "Keep the summary under 2000 characters"),
     tomorrowPlan: z.string().trim().max(1000, "Keep the plan under 1000 characters"),
     blockers: z.string().trim().max(1000, "Keep the blockers under 1000 characters"),
+    /** Custom fields of the report form (checked against the form on the server) */
+    answers: answerInput.default([]),
   })
   .superRefine((v, ctx) => {
-    if (!v.tasks.length && !v.summary) ctx.addIssue({ code: "custom", path: ["summary"], message: "Add at least one task or a short summary of the day" });
     if (totalHours(v.tasks) > 24) ctx.addIssue({ code: "custom", path: ["tasks"], message: "The hours add up to more than 24" });
   });
 export type ReportInput = z.input<typeof reportSchema>;
 export type ReportValues = z.output<typeof reportSchema>;
+
+/**
+ * Content rule for the form in use: with both tasks and summary on, one of them is needed;
+ * with only one on, that one is needed. Returns the field and message, or null.
+ */
+export function checkReportContent(v: { tasks: { title: string }[]; summary: string }, sections: FormSections): { field: "tasks" | "summary"; message: string } | null {
+  const tasks = v.tasks.filter((t) => t.title.trim()).length;
+  const summary = v.summary.trim();
+  if (sections.tasks && sections.summary.on) return tasks || summary ? null : { field: "summary", message: `Add at least one task or a short ${sections.summary.label.toLowerCase()}` };
+  if (sections.tasks) return tasks ? null : { field: "tasks", message: "Add at least one task" };
+  if (sections.summary.on) return summary ? null : { field: "summary", message: `Fill in ${sections.summary.label.toLowerCase()}` };
+  return null;
+}
+
+/** Drops values of sections the form has switched off. */
+export function keepSections<T extends { tasks: unknown[]; summary: string; tomorrowPlan: string; blockers: string }>(v: T, s: FormSections): T {
+  return { ...v, tasks: s.tasks ? v.tasks : [], summary: s.summary.on ? v.summary : "", tomorrowPlan: s.tomorrowPlan.on ? v.tomorrowPlan : "", blockers: s.blockers.on ? v.blockers : "" };
+}
 
 export const reviewSchema = z.object({
   id: z.number().int().positive(),

@@ -38,7 +38,7 @@ export function MyReports({ data, initialDate }: { data: MyReportsData; initialD
         {data.dates.length > 0 && <DayStrip dates={data.dates} today={data.today} selected={date} onSelect={setDate} reports={byDate} hints={data.hints} />}
       </section>
 
-      <ReportComposer key={`${date}:${report?.id ?? "new"}:${report?.submittedAt}:${report?.edited}:${!!report?.reviewed}`} date={date} today={data.today} report={report} hint={data.hints[date] ?? null} />
+      <ReportComposer key={`${date}:${report?.id ?? "new"}:${report?.submittedAt}:${report?.edited}:${!!report?.reviewed}`} date={date} today={data.today} report={report} hint={data.hints[date] ?? null} form={data.form} />
 
       <History reports={data.reports} editable={new Set(data.dates)} onEdit={pick} />
     </div>

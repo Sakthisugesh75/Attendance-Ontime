@@ -276,6 +276,16 @@ export async function cancelRequest(id: number): Promise<RequestResult> {
       await writeAudit({ actorId: actor.id, action: "CANCEL", entity: "AttendanceRequest", entityId: id, before: { status: "PENDING" }, after: { status: "CANCELLED" } }, tx);
     });
     revalidate();
+    // Approvers saw it arrive, so tell them it's gone (it moves to their Cancelled tab).
+    const withdrawn = await prisma.attendanceRequest.findUnique({ where: { id }, include: { leaveType: true, employee: { select: { fullName: true } } } });
+    if (withdrawn) {
+      const approvers = (await recipientsFor("requests.approve", withdrawn.employeeId)).filter((u) => u !== actor.id);
+      await notifyUsers(approvers, {
+        title: `${withdrawn.employee.fullName} withdrew a request`,
+        body: requestSummary({ type: withdrawn.type, fromDate: dbToYmd(withdrawn.fromDate), toDate: dbToYmd(withdrawn.toDate), days: withdrawn.days === null ? null : Number(withdrawn.days), leaveType: withdrawn.leaveType }),
+        link: `/requests?view=approvals&status=CANCELLED`,
+      }).catch((e) => console.error("notify failed", e));
+    }
     return { ok: true, id, message: "Request withdrawn" };
   } catch (err) {
     if (err instanceof Forbidden) return fail(err.message);

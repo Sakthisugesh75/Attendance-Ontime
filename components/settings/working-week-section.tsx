@@ -18,6 +18,7 @@ import { cn } from "@/lib/utils";
 import { buildPattern, describePattern, SATURDAY_POLICY_KEYS, weeklyOffSchema, type SaturdayPolicy, type WeeklyOffInput } from "@/lib/validations/settings";
 import type { WorkingWeekData } from "@/app/(dashboard)/settings/data";
 import { ConfirmButton } from "./confirm-button";
+import { GroupWeeklyOffs } from "./group-weekly-offs";
 import { SaveBar } from "./save-bar";
 import { FieldError, SettingsCard, SettingsSection } from "./section";
 import { nextMonth, PreviewLegend, WeekPreview } from "./week-preview";
@@ -159,6 +160,8 @@ export function WorkingWeekSection({ data }: { data: WorkingWeekData }) {
         </SettingsCard>
       </SettingsSection>
 
+      <GroupWeeklyOffs data={data} />
+
       <CustomDates data={data} />
 
       <SettingsSection title="History" description="Every weekly-off policy, newest first. Rules that have started are kept so old months stay correct.">
@@ -267,7 +270,7 @@ function CustomDates({ data }: { data: WorkingWeekData }) {
   return (
     <SettingsSection
       title="Custom per month"
-      description="One-off changes on top of the weekly pattern: give an extra day off, or make a usual off day a working day (e.g. a compensatory Saturday)."
+      description="One-off changes on top of the company weekly pattern: give an extra day off, or make a usual off day a working day (e.g. a compensatory Saturday). Teams with their own policy keep their own week."
     >
       <SettingsCard>
         <div className="flex flex-wrap items-end gap-3">

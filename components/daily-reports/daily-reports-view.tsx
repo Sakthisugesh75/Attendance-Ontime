@@ -1,5 +1,6 @@
 "use client";
 
+import { LiveRefresh } from "@/components/layout/live-refresh";
 import { Download, NotebookPen } from "lucide-react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useTransition } from "react";
@@ -47,6 +48,7 @@ export function DailyReportsView({ view, showTabs, today, mine, team }: DailyRep
 
   return (
     <div className="space-y-6">
+      <LiveRefresh />
       <PageHeader
         eyebrow={view === "team" ? "Team reports" : "Daily report"}
         title="Daily reports"

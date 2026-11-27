@@ -24,6 +24,11 @@ import { ConfirmButton } from "./confirm-button";
 import { NumberField, SettingsCard, SettingsSection } from "./section";
 
 const days = (n: number) => `${n % 1 ? n.toFixed(1) : n} day${n === 1 ? "" : "s"}`;
+const availableTo = (t: LeaveTypeRow, designations: LeaveTypesData["designations"]) =>
+  designations
+    .filter((d) => t.designationIds.includes(d.id))
+    .map((d) => d.name)
+    .join(", ");
 
 export function LeaveTypesSection({ data }: { data: LeaveTypesData }) {
   const router = useRouter();
@@ -58,6 +63,7 @@ export function LeaveTypesSection({ data }: { data: LeaveTypesData }) {
                       <p className="mt-0.5 text-caption text-ink-3 tabular-nums">
                         {days(t.yearlyQuota)} / year · {t.isPaid ? "Paid" : "Unpaid"}
                         {t.carryForward ? ` · carry ≤ ${days(t.maxCarryForward)}` : ""}
+                        {t.designationIds.length ? ` · ${availableTo(t, data.designations)}` : ""}
                         {!t.isActive && " · Inactive"}
                       </p>
                     </div>
@@ -72,6 +78,7 @@ export function LeaveTypesSection({ data }: { data: LeaveTypesData }) {
                     <TableHead className={cn(T.th, "text-right")}>Quota / year</TableHead>
                     <TableHead className={T.th}>Paid</TableHead>
                     <TableHead className={T.th}>Carry forward</TableHead>
+                    <TableHead className={T.th}>Available to</TableHead>
                     <TableHead className={T.th}>Status</TableHead>
                     <TableHead className={cn(T.th, "w-24")}>
                       <span className="sr-only">Actions</span>
@@ -90,6 +97,15 @@ export function LeaveTypesSection({ data }: { data: LeaveTypesData }) {
                       <TableCell className={cn(T.td, T.num)}>{t.yearlyQuota}</TableCell>
                       <TableCell className={T.td}>{t.isPaid ? "Paid" : "Unpaid"}</TableCell>
                       <TableCell className={T.td}>{t.carryForward ? <span className="tabular-nums">up to {days(t.maxCarryForward)}</span> : <span className="text-ink-3">No</span>}</TableCell>
+                      <TableCell className={cn(T.td, "max-w-48")}>
+                        {t.designationIds.length ? (
+                          <span className="block truncate" title={availableTo(t, data.designations)}>
+                            {availableTo(t, data.designations)}
+                          </span>
+                        ) : (
+                          <span className="text-ink-3">Everyone</span>
+                        )}
+                      </TableCell>
                       <TableCell className={T.td}>
                         <span className={cn("inline-flex h-[22px] items-center gap-1 rounded-full pr-2 pl-1.5 text-caption font-semibold", t.isActive ? "bg-st-present-tint text-st-present-fg" : "bg-sunken text-ink-2")}>
                           {t.isActive ? <CircleCheck aria-hidden className="size-3.5" /> : <Ban aria-hidden className="size-3.5" />}
@@ -114,7 +130,7 @@ export function LeaveTypesSection({ data }: { data: LeaveTypesData }) {
 
       <QuotaRulesPanel data={data} />
       <AllocatePanel data={data} />
-      <LeaveTypeSheet open={open} onOpenChange={setOpen} type={editing} />
+      <LeaveTypeSheet open={open} onOpenChange={setOpen} type={editing} designations={data.designations} />
     </div>
   );
 }
@@ -228,11 +244,11 @@ function Figure({ label, value, hint }: { label: string; value: number; hint?: s
 
 function leaveDefaults(t: LeaveTypeRow | null): LeaveTypeInput {
   return t
-    ? { code: t.code, name: t.name, yearlyQuota: t.yearlyQuota, isPaid: t.isPaid, carryForward: t.carryForward, maxCarryForward: t.maxCarryForward, isActive: t.isActive }
-    : { code: "", name: "", yearlyQuota: 12, isPaid: true, carryForward: false, maxCarryForward: 0, isActive: true };
+    ? { code: t.code, name: t.name, yearlyQuota: t.yearlyQuota, isPaid: t.isPaid, carryForward: t.carryForward, maxCarryForward: t.maxCarryForward, isActive: t.isActive, designationIds: t.designationIds }
+    : { code: "", name: "", yearlyQuota: 12, isPaid: true, carryForward: false, maxCarryForward: 0, isActive: true, designationIds: [] };
 }
 
-function LeaveTypeSheet({ open, onOpenChange, type }: { open: boolean; onOpenChange: (o: boolean) => void; type: LeaveTypeRow | null }) {
+function LeaveTypeSheet({ open, onOpenChange, type, designations }: { open: boolean; onOpenChange: (o: boolean) => void; type: LeaveTypeRow | null; designations: LeaveTypesData["designations"] }) {
   const router = useRouter();
   const [pending, start] = useTransition();
   const [formError, setFormError] = useState("");
@@ -306,6 +322,56 @@ function LeaveTypeSheet({ open, onOpenChange, type }: { open: boolean; onOpenCha
               {...register("maxCarryForward", { valueAsNumber: true })}
             />
           )}
+          <Controller
+            control={control}
+            name="designationIds"
+            render={({ field }) => {
+              const picked: number[] = field.value ?? [];
+              const flip = (id: number) => field.onChange(picked.includes(id) ? picked.filter((x) => x !== id) : [...picked, id]);
+              return (
+                <fieldset className="space-y-2 rounded-md border border-line p-3.5">
+                  <legend className="sr-only">Available to</legend>
+                  <span className="block text-body font-medium">Available to</span>
+                  <span className="block text-caption text-ink-3">
+                    {picked.length ? "Only employees with the designations picked below can apply for it." : "Everyone can apply for it. Pick designations to limit it to them."}
+                  </span>
+                  {designations.length ? (
+                    <div className="flex flex-wrap gap-2 pt-1">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        aria-pressed={!picked.length}
+                        className={cn("rounded-full max-md:h-11", !picked.length && "border-brand bg-brand-subtle text-brand-ink hover:bg-brand-subtle")}
+                        onClick={() => field.onChange([])}
+                      >
+                        Everyone
+                      </Button>
+                      {designations.map((d) => {
+                        const on = picked.includes(d.id);
+                        return (
+                          <Button
+                            key={d.id}
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            aria-pressed={on}
+                            className={cn("rounded-full max-md:h-11", on && "border-brand bg-brand-subtle text-brand-ink hover:bg-brand-subtle")}
+                            onClick={() => flip(d.id)}
+                          >
+                            {d.name}
+                            <span className="text-caption text-ink-3 tabular-nums">{d.employees}</span>
+                          </Button>
+                        );
+                      })}
+                    </div>
+                  ) : (
+                    <span className="block text-caption text-ink-3">Add designations under Departments to limit leave types by designation.</span>
+                  )}
+                </fieldset>
+              );
+            }}
+          />
           {toggle("isActive", "Active", "Inactive types can't be requested")}
           {formError && (
             <p role="alert" className="flex items-start gap-2 rounded-md bg-danger-subtle px-3 py-2.5 text-body text-danger">

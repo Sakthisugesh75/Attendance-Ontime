@@ -1,4 +1,4 @@
-import { ArrowLeft, Briefcase, Building2, Cake, CalendarClock, CalendarDays, Camera, CircleCheck, ClipboardPen, Clock, Hourglass, Lock, Mail, MapPin, Phone, TriangleAlert, UserRound, Users } from "lucide-react";
+import { ArrowLeft, Briefcase, Laptop, Building2, Cake, CalendarClock, CalendarDays, Camera, CircleCheck, ClipboardPen, Clock, Hourglass, Lock, Mail, MapPin, Phone, TriangleAlert, UserRound, Users } from "lucide-react";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { MonthCalendar } from "@/components/attendance/month-calendar";
@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import type { CalendarDay } from "@/lib/attendance/dashboard";
 import { monthView } from "@/lib/attendance/service";
 import { employeeFormOptions, getEmployee, recentPunches } from "@/lib/employees";
+import { assetsHeldBy } from "@/lib/assets";
 import { canReachEmployee, hasPermission, requirePermission, scopeEmployeeIds } from "@/lib/session";
 import { formatDate, formatDuration, formatTime, istDate, monthDates, WEEKDAYS, weekdayOf } from "@/lib/time";
 
@@ -35,7 +36,7 @@ export default async function EmployeePage({ params, searchParams }: { params: P
 
   const today = istDate();
   const month = today.slice(0, 7);
-  const [options, days, punches] = await Promise.all([employeeFormOptions(id, reach), monthView(id, monthDates(month)), recentPunches(id)]);
+  const [options, days, punches, assets] = await Promise.all([employeeFormOptions(id, reach), monthView(id, monthDates(month)), recentPunches(id), assetsHeldBy(id)]);
   const calendar: CalendarDay[] = days.map((v) => ({
     date: v.date,
     status: v.status,
@@ -210,6 +211,35 @@ export default async function EmployeePage({ params, searchParams }: { params: P
                   ))}
                 </ul>
               </>
+            )}
+          </section>
+
+          {/* Company assets they hold */}
+          <section className="rounded-xl bg-surface shadow-card p-4 sm:p-5">
+            <div className="flex items-center justify-between gap-3">
+              <h3 className="flex items-center gap-2 text-title-3 text-ink">
+                <Laptop aria-hidden className="size-4 text-ink-3" /> Assets ({assets.length})
+              </h3>
+              {hasPermission(user, "assets.manage") && (
+                <Link href="/assets?status=ASSIGNED" className="-my-2 py-2 text-label text-brand-ink hover:underline">
+                  Open register
+                </Link>
+              )}
+            </div>
+            {assets.length === 0 ? (
+              <p className="mt-2 text-body text-ink-2">Nothing handed over.</p>
+            ) : (
+              <ul className="mt-3 space-y-2.5">
+                {assets.map((a) => (
+                  <li key={a.id} className="flex items-center gap-3 text-body">
+                    <span className="min-w-0 flex-1 truncate">
+                      <span className="font-medium text-ink">{a.name}</span>
+                      <span className="text-caption text-ink-3 tabular-nums"> · {a.tag}</span>
+                    </span>
+                    <span className="text-caption text-ink-3 tabular-nums">since {formatDate(a.assignedAt)}</span>
+                  </li>
+                ))}
+              </ul>
             )}
           </section>
         </div>

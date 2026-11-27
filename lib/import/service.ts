@@ -80,7 +80,8 @@ export async function loadPreview(id: number) {
   const [employees, holidays, rules, departments] = await Promise.all([
     prisma.employee.findMany({ where: { deletedAt: null }, select: { id: true, fullName: true, code: true, joiningDate: true, exitDate: true, status: true }, orderBy: { fullName: "asc" } }),
     prisma.holiday.findMany(),
-    prisma.weeklyOffRule.findMany(),
+    // The old log follows the company-wide week.
+    prisma.weeklyOffRule.findMany({ where: { shiftId: null, departmentId: null, designationId: null } }),
     prisma.department.findMany({ orderBy: { name: "asc" } }),
   ]);
   const holidayByDate = new Map(holidays.map((h) => [dbToYmd(h.date), h.name]));
@@ -232,7 +233,7 @@ export async function commitImport(id: number, options: CommitImportInput & { st
           res.createdHolidayIds.push(created.id);
         }
         if (options.extraOffDays.length) {
-          const rules = await tx.weeklyOffRule.findMany({ where: { shiftId: null } });
+          const rules = await tx.weeklyOffRule.findMany({ where: { shiftId: null, departmentId: null, designationId: null } });
           const like = rules.map((r) => ({ id: r.id, shiftId: null, effectiveFrom: dbToYmd(r.effectiveFrom), pattern: r.pattern as WeeklyOffPattern }));
           const byRule = new Map<number, string[]>();
           for (const d of options.extraOffDays) {
