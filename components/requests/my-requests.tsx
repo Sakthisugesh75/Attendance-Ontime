@@ -194,7 +194,7 @@ export function MyRequests({ rows, onNew }: { rows: RequestRow[]; onNew: () => v
           <AlertDialogHeader>
             <AlertDialogTitle>Cancel this request?</AlertDialogTitle>
             <AlertDialogDescription>
-              {confirmCancel && `${confirmCancel.leaveType?.name ?? REQUEST_TYPE_META[confirmCancel.type].label} · ${requestWhen(confirmCancel)}. HR won't see it any more.`}
+              {confirmCancel && `${confirmCancel.leaveType?.name ?? REQUEST_TYPE_META[confirmCancel.type].label} · ${requestWhen(confirmCancel)}. HR is told you withdrew it.`}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
