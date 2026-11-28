@@ -4,6 +4,8 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
 const PUBLIC = ["/login", "/forgot-password", "/reset-password"];
+/** Open to everyone, signed in or not, with no redirect (the app download page). */
+const OPEN = ["/app"];
 /**
  * Pages that need a permission. Uses the permissions mirrored in the session token (refreshed
  * every minute), so it only avoids a flash: every page, action and route checks again on the server.
@@ -31,6 +33,7 @@ async function sessionStillValid(id: string, sessionVersion: number | undefined)
 
 export default auth(async (req) => {
   const { pathname, search } = req.nextUrl;
+  if (OPEN.includes(pathname)) return NextResponse.next();
   const user = req.auth?.user;
   const isPublic = PUBLIC.some((p) => pathname === p || pathname.startsWith(`${p}/`));
 

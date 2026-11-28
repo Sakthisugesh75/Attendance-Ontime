@@ -347,7 +347,7 @@ export function ImportReview({ preview }: { preview: ImportPreview }) {
       </Section>
 
       {/* Confirm bar */}
-      <div className="fixed inset-x-0 bottom-0 z-20 border-t border-line bg-surface pb-[env(safe-area-inset-bottom)] md:left-[var(--sidebar-width)] md:peer-data-[state=collapsed]:left-[var(--sidebar-width-icon)]">
+      <div className="fixed inset-x-0 bottom-0 z-20 border-t border-line bg-surface pb-(--inset-bottom) md:left-[var(--sidebar-width)] md:peer-data-[state=collapsed]:left-[var(--sidebar-width-icon)]">
         <div className="mx-auto flex max-w-7xl flex-wrap items-center gap-3 px-4 py-3 sm:px-6 lg:px-8">
           <p className="min-w-0 flex-1 text-body">
             {error ? (

@@ -34,17 +34,20 @@ export function TopBar({ name, email, notifications, access }: { name: string; e
   const [profileOpen, setProfileOpen] = useState(false);
 
   return (
-    <header className="sticky top-0 z-30 flex h-14 shrink-0 items-center gap-2 px-3 backdrop-blur-xl [background:color-mix(in_srgb,var(--ad-canvas)_55%,transparent)] sm:px-5">
-      <SidebarTrigger className="-ml-1" />
-      <Separator orientation="vertical" className="mr-1 data-[orientation=vertical]:h-5" />
+    <header className="sticky top-0 z-30 flex h-[calc(3.5rem+var(--inset-top))] shrink-0 items-center gap-2 px-3 pt-(--inset-top) backdrop-blur-xl [background:color-mix(in_srgb,var(--ad-canvas)_55%,transparent)] sm:px-5">
+      {/* Phones open the menu from the dock instead. */}
+      <SidebarTrigger className="-ml-1 max-md:hidden" />
+      <Separator orientation="vertical" className="mr-1 data-[orientation=vertical]:h-5 max-md:hidden" />
       <Breadcrumbs />
       <div className="ml-auto flex shrink-0 items-center gap-1">
         <div className="mr-1">
           <CommandPalette access={access} />
         </div>
+        {/* On phones the theme switch lives in the account menu. */}
         <Button
           variant="ghost"
           size="icon"
+          className="max-md:hidden"
           aria-label={`Theme: ${theme ?? "system"}`}
           onClick={() => setTheme(theme === "light" ? "dark" : theme === "dark" ? "system" : "light")}
         >
@@ -53,11 +56,11 @@ export function TopBar({ name, email, notifications, access }: { name: string; e
         <NotificationBell items={notifications} />
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="ghost" className="ml-1 h-9 gap-2 rounded-full px-1 sm:pr-3" aria-label="Account menu">
+            <Button variant="ghost" className="ml-1 h-9 gap-2 rounded-full px-1 lg:pr-3" aria-label="Account menu">
               <Avatar className="size-7">
                 <AvatarFallback className="bg-brand text-[11px] font-semibold text-brand-foreground">{initials(name)}</AvatarFallback>
               </Avatar>
-              <span className="hidden max-w-36 truncate text-sm font-medium sm:block">{name}</span>
+              <span className="hidden max-w-36 truncate text-sm font-medium lg:block">{name}</span>
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-60">

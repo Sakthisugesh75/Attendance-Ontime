@@ -5,7 +5,7 @@ import { cva, type VariantProps } from "class-variance-authority"
 import { cn } from "@/lib/utils"
 import { Slot } from "radix-ui"
 
-import { useIsMobile } from "@/hooks/use-mobile"
+import { useIsMobile, useIsTablet } from "@/hooks/use-mobile"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Separator } from "@/components/ui/separator"
@@ -87,10 +87,19 @@ function SidebarProvider({
     [setOpenProp, open]
   )
 
+  // Tablets (768–1023px) start with the 64px icon rail (DESIGN.md §8). Opening it there is
+  // temporary and isn't saved, so it doesn't change the laptop setting.
+  const isTablet = useIsTablet()
+  const [tabletOpen, setTabletOpen] = React.useState(false)
+  const effectiveOpen = isTablet ? tabletOpen : open
+  const setEffectiveOpen = isTablet ? setTabletOpen : setOpen
+
   // Helper to toggle the sidebar.
   const toggleSidebar = React.useCallback(() => {
-    return isMobile ? setOpenMobile((open) => !open) : setOpen((open) => !open)
-  }, [isMobile, setOpen, setOpenMobile])
+    if (isMobile) return setOpenMobile((open) => !open)
+    if (isTablet) return setTabletOpen((open) => !open)
+    return setOpen((open) => !open)
+  }, [isMobile, isTablet, setOpen, setOpenMobile])
 
   // Adds a keyboard shortcut to toggle the sidebar.
   React.useEffect(() => {
@@ -110,19 +119,19 @@ function SidebarProvider({
 
   // We add a state so that we can do data-state="expanded" or "collapsed".
   // This makes it easier to style the sidebar with Tailwind classes.
-  const state = open ? "expanded" : "collapsed"
+  const state = effectiveOpen ? "expanded" : "collapsed"
 
   const contextValue = React.useMemo<SidebarContextProps>(
     () => ({
       state,
-      open,
-      setOpen,
+      open: effectiveOpen,
+      setOpen: setEffectiveOpen,
       isMobile,
       openMobile,
       setOpenMobile,
       toggleSidebar,
     }),
-    [state, open, setOpen, isMobile, openMobile, setOpenMobile, toggleSidebar]
+    [state, effectiveOpen, setEffectiveOpen, isMobile, openMobile, setOpenMobile, toggleSidebar]
   )
 
   return (
@@ -186,7 +195,7 @@ function Sidebar({
           data-sidebar="sidebar"
           data-slot="sidebar"
           data-mobile="true"
-          className="w-(--sidebar-width) bg-sidebar p-0 text-sidebar-foreground [&>button]:hidden"
+          className="w-(--sidebar-width) bg-raised p-0 pt-(--inset-top) pb-(--inset-bottom) text-sidebar-foreground [&>button]:hidden"
           style={
             {
               "--sidebar-width": SIDEBAR_WIDTH_MOBILE,

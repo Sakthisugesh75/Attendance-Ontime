@@ -126,11 +126,11 @@ export function CommandPalette({ access: accessProp }: { access?: NavAccess }) {
         onClick={() => setOpen(true)}
         aria-label={`Search (${shortcut})`}
         aria-keyshortcuts="Control+K Meta+K"
-        className="size-11 gap-2 rounded-md border-line bg-surface px-0 font-normal text-ink-3 shadow-none hover:border-line-strong hover:bg-surface hover:text-ink-2 sm:h-9 sm:w-56 sm:justify-start sm:px-3 lg:w-64"
+        className="size-11 gap-2 rounded-md border-line bg-surface px-0 font-normal text-ink-3 shadow-none hover:border-line-strong hover:bg-surface hover:text-ink-2 lg:h-9 lg:w-56 lg:justify-start lg:px-3 xl:w-64"
       >
         <Search className="size-4" />
-        <span className="hidden flex-1 text-left text-body sm:inline">Search…</span>
-        <kbd className="pointer-events-none hidden h-5 items-center rounded-xs border border-line bg-sunken px-1.5 text-caption text-ink-3 select-none sm:inline-flex">
+        <span className="hidden flex-1 text-left text-body lg:inline">Search…</span>
+        <kbd className="pointer-events-none hidden h-5 items-center rounded-xs border border-line bg-sunken px-1.5 text-caption text-ink-3 select-none lg:inline-flex">
           {shortcut}
         </kbd>
       </Button>

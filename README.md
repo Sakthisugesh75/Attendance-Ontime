@@ -121,7 +121,11 @@ Phones only allow installing the app, location and the camera on **https**. `npm
 
 The PC must stay on with both windows open. Before going public, make sure no account still uses a default password.
 
-## Install as an app (PWA)
+## Mobile app (Android + iOS)
+
+`mobile/` holds the native app (Capacitor). It opens the deployed site with native location, camera, haptics, downloads through the share sheet and an offline page. Web deploys update it automatically. See [mobile/README.md](mobile/README.md) to build it.
+
+### Browser install (PWA, fallback)
 
 The manifest, icons and service worker are included. On a phone, open the site in Chrome or Safari and choose **Add to Home screen**. Installing requires HTTPS (localhost is exempt). The service worker only runs in production builds. Pages are always loaded live, and an offline page is shown when the network is down.
 

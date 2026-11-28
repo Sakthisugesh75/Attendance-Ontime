@@ -31,6 +31,9 @@ async function punch(kind: "IN" | "OUT", raw: PunchInput): Promise<ActionResult>
     const parsed = punchSchema.safeParse(raw);
     if (!parsed.success) return fail(parsed.error.issues[0]?.message ?? "Invalid punch");
     const { location, selfie } = parsed.data;
+    // Tapped the app's office-arrival notification: punch-in only, always checked against the office.
+    const arrival = parsed.data.via === "arrival";
+    if (arrival && kind !== "IN") return fail("Arrival punches are for punching in only.");
 
     // The server clock is the only clock that counts.
     const now = new Date();
@@ -47,7 +50,15 @@ async function punch(kind: "IN" | "OUT", raw: PunchInput): Promise<ActionResult>
 
     // Geofence: required unless an approved WFH / on-duty covers today.
     const geofence = await getSetting("geofence");
-    if (geofence.enabled) {
+    if (arrival && !geofence.enabled) return fail("Arrival punch needs the office location set up in Settings → Punching.");
+    if (arrival) {
+      // No WFH / on-duty bypass: the point of an arrival punch is that you are at the office.
+      if (!location) return fail("Allow location access to punch from the office.");
+      const distance = distanceMeters(location, geofence);
+      if (distance > geofence.radiusMeters + Math.min(location.accuracy, 100)) {
+        return fail(`You are about ${Math.round(distance)} m from the office. Punch from within ${geofence.radiusMeters} m.`);
+      }
+    } else if (geofence.enabled) {
       const remote = await prisma.attendanceRequest.count({
         where: {
           employeeId: employee.id,
@@ -68,13 +79,14 @@ async function punch(kind: "IN" | "OUT", raw: PunchInput): Promise<ActionResult>
     }
 
     const { selfieRequired } = await getSetting("punch");
-    if (selfieRequired && !selfie) return fail("Take a selfie to punch.");
+    // Arrival punches skip the selfie (the phone may be locked); they are recorded with source ARRIVAL so HR can tell.
+    if (selfieRequired && !selfie && !arrival) return fail("Take a selfie to punch.");
     const selfiePath = selfie ? await saveSelfie(employee.id, today, kind, selfie) : null;
 
     const geo = location ? { lat: location.lat, lng: location.lng, acc: Math.round(location.accuracy) } : null;
     const data =
       kind === "IN"
-        ? { punchInAt: now, punchInLat: geo?.lat, punchInLng: geo?.lng, punchInAccuracy: geo?.acc, punchInSelfie: selfiePath }
+        ? { punchInAt: now, punchInLat: geo?.lat, punchInLng: geo?.lng, punchInAccuracy: geo?.acc, punchInSelfie: selfiePath, ...(arrival ? { source: "ARRIVAL" as const } : {}) }
         : { punchOutAt: now, punchOutLat: geo?.lat, punchOutLng: geo?.lng, punchOutAccuracy: geo?.acc, punchOutSelfie: selfiePath };
 
     // The unique (employeeId, date) index makes a double-tap race fail instead of creating two records.
@@ -83,10 +95,10 @@ async function punch(kind: "IN" | "OUT", raw: PunchInput): Promise<ActionResult>
           where: { id: existing.id, ...(kind === "IN" ? { punchInAt: null } : { punchOutAt: null }) },
           data,
         })
-      : await prisma.attendanceRecord.create({ data: { employeeId: employee.id, date: ymdToDb(today), source: "WEB", ...data } });
+      : await prisma.attendanceRecord.create({ data: { employeeId: employee.id, date: ymdToDb(today), source: arrival ? "ARRIVAL" : "WEB", ...data } });
 
     await recomputeDay(employee.id, today);
-    await writeAudit({ actorId: user.id, action: kind === "IN" ? "PUNCH_IN" : "PUNCH_OUT", entity: "AttendanceRecord", entityId: record.id, after: { at: now.toISOString(), location: geo } });
+    await writeAudit({ actorId: user.id, action: kind === "IN" ? "PUNCH_IN" : "PUNCH_OUT", entity: "AttendanceRecord", entityId: record.id, after: { at: now.toISOString(), location: geo, ...(arrival ? { via: "arrival notification" } : {}) } });
 
     revalidatePath("/dashboard");
     revalidatePath("/attendance");

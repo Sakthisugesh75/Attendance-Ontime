@@ -1,4 +1,4 @@
-import { Building2, CalendarRange, ClipboardList, Clock, DatabaseBackup, FileText, MapPin, Network, Plane, SlidersHorizontal, type LucideIcon } from "lucide-react";
+import { Building2, CalendarRange, ClipboardList, Clock, DatabaseBackup, FileText, MapPin, Network, Plane, SlidersHorizontal, Smartphone, type LucideIcon } from "lucide-react";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
 import { SETTINGS_TABS, type SettingsTab } from "@/lib/validations/settings";
@@ -13,6 +13,7 @@ const ICONS: Record<SettingsTab, LucideIcon> = {
   organisation: Network,
   "report-forms": ClipboardList,
   exports: FileText,
+  "mobile-app": Smartphone,
   backup: DatabaseBackup,
 };
 
@@ -26,6 +27,7 @@ const HINTS: Record<SettingsTab, string> = {
   organisation: "Departments, designations",
   "report-forms": "Daily report fields",
   exports: "Letterhead, signatures, columns",
+  "mobile-app": "Android app download",
   backup: "Download and restore data",
 };
 

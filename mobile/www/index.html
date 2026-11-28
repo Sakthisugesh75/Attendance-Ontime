@@ -1,0 +1,13 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Attendance</title>
+</head>
+<body style="background:#f5ecd6">
+  <!-- Never shown in normal use: the app loads SERVER_URL (capacitor.config.ts). Capacitor needs an index.html in webDir. -->
+  <script src="server.js"></script>
+  <script>location.replace((window.ATTENDANCE_SERVER_URL || "") + "/dashboard");</script>
+</body>
+</html>

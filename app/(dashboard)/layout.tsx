@@ -38,7 +38,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
           }))}
         />
         {/* Bottom padding on phones keeps content clear of the tab bar. */}
-        <div className="mx-auto w-full max-w-7xl flex-1 px-4 pt-6 pb-[calc(6.5rem+env(safe-area-inset-bottom))] sm:px-6 md:pb-8 lg:px-8 lg:py-8">{children}</div>
+        <div className="mx-auto w-full max-w-7xl flex-1 px-4 pt-6 pb-[calc(6.5rem+var(--inset-bottom))] sm:px-6 md:pb-8 lg:px-8 lg:py-8">{children}</div>
         <BottomNav access={access} />
         <ReminderPopup />
       </SidebarInset>

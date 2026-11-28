@@ -16,8 +16,24 @@ export type ArtName = (typeof ART)[number];
 /** One meaning per picture, shared across the app. */
 export const REQUEST_ART = { LEAVE: "palm", WFH: "house", PERMISSION: "hourglass", ON_DUTY: "briefcase", REGULARIZATION: "clipboard" } as const satisfies Record<string, ArtName>;
 
-/** `size` is the default box; a size-* class in `className` overrides it per breakpoint. */
-export function Illustration({ name, size = 48, float, className }: { name: ArtName; size?: number; float?: boolean; className?: string }) {
+/**
+ * `size` is the default box; a size-* class in `className` overrides it per breakpoint.
+ * `priority` loads the picture first: use it for a hero picture at the top of a page (it is
+ * often the page's largest visible element).
+ */
+export function Illustration({
+  name,
+  size = 48,
+  float,
+  priority,
+  className,
+}: {
+  name: ArtName;
+  size?: number;
+  float?: boolean;
+  priority?: boolean;
+  className?: string;
+}) {
   return (
     <Image
       src={`/illustrations/${name}.png`}
@@ -25,6 +41,7 @@ export function Illustration({ name, size = 48, float, className }: { name: ArtN
       aria-hidden
       width={size}
       height={size}
+      priority={priority}
       unoptimized
       draggable={false}
       className={cn("pointer-events-none shrink-0 object-contain drop-shadow-[0_8px_10px_rgba(80,50,0,0.22)] select-none", float && "art-float", className)}

@@ -188,10 +188,17 @@ export function ReportsView({
 
           {/* Filter bar: date range with presets, department, employee */}
           <div className="flex flex-col gap-2 rounded-xl bg-surface shadow-card p-3 sm:flex-row sm:flex-wrap sm:items-center">
-            <div className="flex items-center gap-2">
-              <Input type="date" value={params.from} max={params.to} onChange={(e) => e.target.value && setParams({ from: e.target.value })} aria-label="From" className="w-full tabular-nums sm:w-40" />
-              <span aria-hidden className="text-ink-3">–</span>
-              <Input type="date" value={params.to} min={params.from} onChange={(e) => e.target.value && setParams({ to: e.target.value })} aria-label="To" className="w-full tabular-nums sm:w-40" />
+            {/* Phones: two equal columns with small labels, so the whole date fits. */}
+            <div className="grid grid-cols-2 gap-2 sm:flex sm:items-center">
+              <label className="min-w-0 space-y-1 sm:space-y-0">
+                <span className="block text-caption text-ink-3 sm:sr-only">From</span>
+                <Input type="date" value={params.from} max={params.to} onChange={(e) => e.target.value && setParams({ from: e.target.value })} className="w-full min-w-0 px-3 tabular-nums sm:w-40" />
+              </label>
+              <span aria-hidden className="hidden text-ink-3 sm:inline">–</span>
+              <label className="min-w-0 space-y-1 sm:space-y-0">
+                <span className="block text-caption text-ink-3 sm:sr-only">To</span>
+                <Input type="date" value={params.to} min={params.from} onChange={(e) => e.target.value && setParams({ to: e.target.value })} className="w-full min-w-0 px-3 tabular-nums sm:w-40" />
+              </label>
             </div>
             <Select
               value={presets(today).find((p) => p.from === params.from && p.to === params.to)?.label ?? "custom"}

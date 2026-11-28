@@ -98,16 +98,36 @@
   }
   html {
     @apply font-sans;
+    /*
+     * Space taken by the phone's status bar, notch and gesture bar. Browsers give env(); the
+     * Android app (Capacitor) sets --safe-area-inset-* because older WebViews report env() as 0.
+     * Use these instead of env(safe-area-inset-*) directly.
+     */
+    --inset-top: max(env(safe-area-inset-top, 0px), var(--safe-area-inset-top, 0px));
+    --inset-bottom: max(env(safe-area-inset-bottom, 0px), var(--safe-area-inset-bottom, 0px));
+    --inset-left: max(env(safe-area-inset-left, 0px), var(--safe-area-inset-left, 0px));
+    --inset-right: max(env(safe-area-inset-right, 0px), var(--safe-area-inset-right, 0px));
   }
   body {
     @apply text-foreground antialiased;
-    /* Warm light (butter, peach, mint) behind the frosted-glass surfaces (DESIGN.md §0). */
+    background: var(--ad-canvas);
+  }
+  /*
+   * Warm light (butter, peach, mint) behind the frosted-glass surfaces (DESIGN.md §0).
+   * A fixed layer instead of background-attachment: fixed, which makes phones repaint the
+   * whole screen on every scroll frame.
+   */
+  body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
     background:
       radial-gradient(560px 460px at 30% -6%, color-mix(in srgb, var(--ad-canvas-glow) 75%, transparent), transparent 70%),
       radial-gradient(520px 440px at 104% 42%, color-mix(in srgb, var(--ad-glow-2) 70%, transparent), transparent 70%),
       radial-gradient(560px 480px at -6% 104%, color-mix(in srgb, var(--ad-glow-3) 75%, transparent), transparent 70%),
       var(--ad-canvas);
-    background-attachment: fixed;
   }
   h1,
   h2 {
@@ -133,6 +153,17 @@
   .glass {
     background: var(--ad-surface);
     box-shadow: var(--ad-shadow-card);
+  }
+  /*
+   * Phones and tablets: blur is costly on their graphics chips and made scrolling stutter.
+   * Cards in the page only have the soft canvas light behind them, so they drop the blur;
+   * things that float over content (dock, top bar, .glass chips) keep it.
+   */
+  @media (hover: none) and (pointer: coarse) {
+    .shadow-card:not(.glass) {
+      -webkit-backdrop-filter: none;
+      backdrop-filter: none;
+    }
   }
   .tabular {
     font-variant-numeric: tabular-nums;

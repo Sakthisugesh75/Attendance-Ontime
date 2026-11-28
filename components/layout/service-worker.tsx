@@ -1,11 +1,12 @@
 "use client";
 
 import { useEffect } from "react";
+import { isNativeApp } from "@/lib/native";
 
-/** Registers /sw.js in production so the app is installable and opens offline. */
+/** Registers /sw.js in production so the site opens offline in browsers. Skipped inside the native app. */
 export function ServiceWorker() {
   useEffect(() => {
-    if (process.env.NODE_ENV !== "production" || !("serviceWorker" in navigator)) return;
+    if (process.env.NODE_ENV !== "production" || !("serviceWorker" in navigator) || isNativeApp()) return;
     navigator.serviceWorker.register("/sw.js").catch((err) => console.warn("Service worker registration failed", err));
   }, []);
   return null;

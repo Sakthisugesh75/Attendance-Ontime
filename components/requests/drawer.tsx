@@ -23,7 +23,7 @@ export function DrawerContent({
       className={cn(
         "gap-0 border-line bg-raised p-0 text-ink shadow-lg",
         mobile
-          ? "max-h-[90dvh] rounded-t-xl pb-[env(safe-area-inset-bottom)]"
+          ? "max-h-[90dvh] rounded-t-xl pb-(--inset-bottom)"
           : cn("data-[side=right]:w-full", size === "form" ? "data-[side=right]:sm:max-w-[560px]" : "data-[side=right]:sm:max-w-[440px]"),
         className,
       )}

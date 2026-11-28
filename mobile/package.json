@@ -1,0 +1,33 @@
+{
+  "name": "attendance-mobile",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Native Android and iOS shell (Capacitor) for Attendance Desk. Loads the deployed web app and adds native GPS, camera, haptics, downloads and splash.",
+  "scripts": {
+    "assets": "node scripts/make-assets.mjs && capacitor-assets generate --android --ios",
+    "sync": "node scripts/write-server-url.mjs && cap sync",
+    "android": "node scripts/write-server-url.mjs && cap sync android && cap open android",
+    "ios": "node scripts/write-server-url.mjs && cap sync ios && cap open ios",
+    "run:android": "node scripts/write-server-url.mjs && cap run android",
+    "publish:apk": "node scripts/publish-apk.mjs",
+    "release:android": "node scripts/build-release.mjs"
+  },
+  "dependencies": {
+    "@capacitor/android": "^8.6.3",
+    "@capacitor/app": "^8.1.2",
+    "@capacitor/browser": "^8.0.5",
+    "@capacitor/core": "^8.6.3",
+    "@capacitor/filesystem": "^8.1.6",
+    "@capacitor/haptics": "^8.0.2",
+    "@capacitor/ios": "^8.6.3",
+    "@capacitor/share": "^8.0.3",
+    "@capacitor/splash-screen": "^8.0.2",
+    "@capacitor/status-bar": "^8.0.4"
+  },
+  "devDependencies": {
+    "@capacitor/assets": "^4.0.0",
+    "@capacitor/cli": "^8.6.3",
+    "typescript": "^7.0.2"
+  },
+  "type": "module"
+}

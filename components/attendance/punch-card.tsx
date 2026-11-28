@@ -8,6 +8,7 @@ import { toast } from "sonner";
 import { PUNCH_EVENT } from "@/components/layout/reminder-popup";
 import { Illustration } from "@/components/ui/illustration";
 import { punchIn, punchOut } from "@/lib/actions/punch";
+import { hapticTap } from "@/lib/native";
 import type { TodayInfo } from "@/lib/attendance/dashboard";
 import { formatClock, formatDuration, formatTime } from "@/lib/time";
 import { cn } from "@/lib/utils";
@@ -60,7 +61,7 @@ function useOnline() {
   return online;
 }
 
-function getLocation(): Promise<{ lat: number; lng: number; accuracy: number }> {
+export function getLocation(): Promise<{ lat: number; lng: number; accuracy: number }> {
   return new Promise((resolve, reject) => {
     if (!("geolocation" in navigator)) return reject(new Error("This device can't share its location."));
     navigator.geolocation.getCurrentPosition(
@@ -228,7 +229,7 @@ export function PunchCard({
           setTimeout(() => setJustDone(null), 2400);
           toast.success(res.message, { description: `Recorded at ${formatTime(new Date())} IST` });
           window.dispatchEvent(new Event(PUNCH_EVENT));
-          navigator.vibrate?.(20);
+          hapticTap();
           router.refresh();
         } else {
           setError(res.error);
@@ -263,7 +264,7 @@ export function PunchCard({
     setDragging(false);
     if (slide >= SLIDE_DONE) {
       setSlide(1);
-      navigator.vibrate?.(20);
+      hapticTap();
       go();
     } else {
       setSlide(0);

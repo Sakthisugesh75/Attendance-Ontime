@@ -149,7 +149,7 @@ export function ReminderPopup() {
           className={cn(
             "gap-0 overflow-hidden rounded-xl border-line bg-raised p-0 shadow-lg sm:max-w-[440px]",
             // Phones: a card anchored to the bottom, within thumb reach, clear of the home indicator.
-            "max-sm:top-auto max-sm:bottom-[max(1rem,env(safe-area-inset-bottom))] max-sm:translate-y-0",
+            "max-sm:top-auto max-sm:bottom-[max(1rem,var(--inset-bottom))] max-sm:translate-y-0",
           )}
         >
           <div className="relative px-6 pt-6">

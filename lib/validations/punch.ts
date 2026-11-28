@@ -16,6 +16,8 @@ export const punchSchema = z.object({
     .startsWith("data:image/jpeg;base64,", "Selfie must be a JPEG image")
     .max(MAX_SELFIE_CHARS, "Selfie is too large")
     .nullable(),
+  /** "arrival": tapped the native app's office-arrival notification (punch-in only; no selfie; must be inside the office radius). */
+  via: z.enum(["app", "arrival"]).optional(),
 });
 
 export type PunchInput = z.infer<typeof punchSchema>;

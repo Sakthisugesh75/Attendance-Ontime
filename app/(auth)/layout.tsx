@@ -29,7 +29,7 @@ function ClockOrb() {
 
 export default function AuthLayout({ children }: { children: React.ReactNode }) {
   return (
-    <main className="flex min-h-dvh items-center justify-center px-4 py-10 sm:px-8">
+    <main className="flex min-h-dvh items-center justify-center px-4 pt-[calc(2.5rem+var(--inset-top))] pb-[calc(2.5rem+var(--inset-bottom))] sm:px-8">
       <div className="rise w-full max-w-[420px]">
         <ClockOrb />
         <div className="glass rounded-xl px-5 py-7 sm:px-8 sm:py-8">{children}</div>

@@ -105,7 +105,58 @@ export default async function AttendancePage({ searchParams }: { searchParams: P
         {shown.length === 0 ? (
           <p className="px-5 py-10 text-center text-body text-ink-2">No days yet this month.</p>
         ) : (
-          <div className="overflow-x-auto">
+          <>
+          {/* Phones: one card per day (DESIGN.md §4.2): date and status, then In / Out / Worked. */}
+          <ul className="divide-y divide-line md:hidden">
+            {shown.map((d) => {
+              const off = d.status === "HOLIDAY" || d.status === "WEEKLY_OFF";
+              const punched = !!d.record?.punchInAt;
+              return (
+                <li key={d.date} className={cn("px-4 py-3", d.date === today && "bg-brand-subtle/50")}>
+                  <div className="flex items-center justify-between gap-3">
+                    <p className="min-w-0 truncate">
+                      <span className={cn("text-m-meta font-medium tabular-nums", off ? "text-ink-3" : "text-ink")}>{formatDate(d.date)}</span>
+                      <span className="ml-2 text-caption text-ink-3">{WEEKDAYS[weekdayOf(d.date)]!.slice(0, 3)}</span>
+                    </p>
+                    <StatusChip status={d.status} label={d.holiday && d.status === "HOLIDAY" ? d.holiday : undefined} />
+                  </div>
+                  {punched && (
+                    <dl className="mt-2.5 grid grid-cols-3 gap-2 tabular-nums">
+                      <div>
+                        <dt className="text-caption text-ink-3">In</dt>
+                        <dd className="text-m-meta text-ink">{formatTime(d.record!.punchInAt!)}</dd>
+                      </div>
+                      <div>
+                        <dt className="text-caption text-ink-3">Out</dt>
+                        <dd className="text-m-meta text-ink">
+                          {d.record?.punchOutAt ? (
+                            formatTime(d.record.punchOutAt)
+                          ) : (
+                            <span className="inline-flex items-center gap-1 font-medium text-danger">
+                              <TriangleAlert aria-hidden className="size-3.5" />
+                              Missing
+                            </span>
+                          )}
+                        </dd>
+                      </div>
+                      <div>
+                        <dt className="text-caption text-ink-3">Worked</dt>
+                        <dd className="text-m-meta text-ink">{d.workedMinutes ? formatDuration(d.workedMinutes) : <Dash />}</dd>
+                      </div>
+                    </dl>
+                  )}
+                  {(d.lateMinutes > 0 || d.overtimeMinutes > 0) && (
+                    <p className="mt-1.5 text-caption text-ink-2 tabular-nums">
+                      {d.lateMinutes > 0 && <span className="font-semibold text-st-late-fg">Late by {d.lateMinutes}m</span>}
+                      {d.lateMinutes > 0 && d.overtimeMinutes > 0 && " · "}
+                      {d.overtimeMinutes > 0 && <span>Overtime {formatDuration(d.overtimeMinutes)}</span>}
+                    </p>
+                  )}
+                </li>
+              );
+            })}
+          </ul>
+          <div className="overflow-x-auto max-md:hidden">
             <Table>
               <TableHeader>
                 <TableRow>
@@ -149,6 +200,7 @@ export default async function AttendancePage({ searchParams }: { searchParams: P
               </TableBody>
             </Table>
           </div>
+          </>
         )}
       </Panel>
     </div>

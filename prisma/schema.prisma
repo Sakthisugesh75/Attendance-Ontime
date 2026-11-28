@@ -276,6 +276,8 @@ enum AttendanceSource {
   WEB
   IMPORT
   MANUAL
+  /// Punched in from the native app's office-arrival notification (no selfie; location checked)
+  ARRIVAL
 }
 
 model AttendanceRecord {

@@ -17,3 +17,20 @@ export function useIsMobile() {
 
   return !!isMobile
 }
+
+const DESKTOP_BREAKPOINT = 1024
+
+/** 768–1023px: tablets, where the sidebar starts as an icon rail. */
+export function useIsTablet() {
+  const [isTablet, setIsTablet] = React.useState(false)
+
+  React.useEffect(() => {
+    const mql = window.matchMedia(`(min-width: ${MOBILE_BREAKPOINT}px) and (max-width: ${DESKTOP_BREAKPOINT - 1}px)`)
+    const onChange = () => setIsTablet(mql.matches)
+    mql.addEventListener("change", onChange)
+    onChange()
+    return () => mql.removeEventListener("change", onChange)
+  }, [])
+
+  return isTablet
+}

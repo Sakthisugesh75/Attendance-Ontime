@@ -21,7 +21,9 @@
     "bundle": "node scripts/bundle.mjs",
     "export-db": "node scripts/export-db.mjs",
     "postinstall": "prisma generate",
-    "bundle:cpanel": "next build && node scripts/bundle.mjs --cpanel"
+    "bundle:cpanel": "next build && node scripts/bundle.mjs --cpanel",
+    "release:android": "npm --prefix mobile run release:android",
+    "publish:apk": "npm --prefix mobile run publish:apk"
   },
   "dependencies": {
     "@date-fns/tz": "^1.5.0",

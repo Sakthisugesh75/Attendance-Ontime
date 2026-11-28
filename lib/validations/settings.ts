@@ -403,6 +403,7 @@ export const SETTINGS_TABS = [
   { key: "organisation", label: "Departments" },
   { key: "report-forms", label: "Report forms" },
   { key: "exports", label: "Export format" },
+  { key: "mobile-app", label: "Mobile app" },
   { key: "backup", label: "Backup" },
 ] as const;
 export type SettingsTab = (typeof SETTINGS_TABS)[number]["key"];

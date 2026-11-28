@@ -26,7 +26,7 @@ export function Breadcrumbs() {
                 </BreadcrumbItem>
               ) : (
                 <>
-                  <BreadcrumbItem className="hidden shrink-0 sm:inline-flex">
+                  <BreadcrumbItem className="hidden shrink-0 lg:inline-flex">
                     {c.href ? (
                       <BreadcrumbLink asChild>
                         <Link href={c.href}>{c.label}</Link>
@@ -35,7 +35,7 @@ export function Breadcrumbs() {
                       <span>{c.label}</span>
                     )}
                   </BreadcrumbItem>
-                  <BreadcrumbSeparator className="hidden sm:block" />
+                  <BreadcrumbSeparator className="hidden lg:block" />
                 </>
               )}
             </Fragment>

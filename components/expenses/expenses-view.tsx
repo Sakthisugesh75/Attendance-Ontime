@@ -12,11 +12,12 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { markClaimsPaid } from "@/lib/actions/expenses";
 import type { CategoryRow, ClaimRow } from "@/lib/expenses";
-import { formatDate } from "@/lib/time";
+import { formatDate, istDate, monthLabel } from "@/lib/time";
 import { cn } from "@/lib/utils";
 import { formatRupees, type ExpenseListParams } from "@/lib/validations/expenses";
 import { CategoriesPanel } from "./categories-panel";
@@ -33,6 +34,18 @@ const FILTERS: { key: ExpenseListParams["status"]; label: string }[] = [
   { key: "REJECTED", label: "Rejected" },
   { key: "ALL", label: "All" },
 ];
+
+/** This month and the 11 before it (IST), plus the chosen month if it is older. */
+function recentMonths(selected?: string) {
+  const d = new Date(`${istDate().slice(0, 7)}-01T00:00:00Z`);
+  const months: string[] = [];
+  for (let i = 0; i < 12; i++) {
+    months.push(d.toISOString().slice(0, 7));
+    d.setUTCMonth(d.getUTCMonth() - 1);
+  }
+  if (selected && !months.includes(selected)) months.push(selected);
+  return months;
+}
 
 export function ExpensesView({
   view,
@@ -142,7 +155,19 @@ export function ExpensesView({
                 </Button>
               ))}
             </div>
-            <Input type="month" aria-label="Month" value={params.month ?? ""} onChange={(e) => go({ month: e.target.value || undefined })} className="w-full tabular-nums sm:w-44" />
+            <Select value={params.month ?? "all"} onValueChange={(v) => go({ month: v === "all" ? undefined : v })}>
+              <SelectTrigger aria-label="Month" className="w-full tabular-nums sm:w-44">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All months</SelectItem>
+                {recentMonths(params.month).map((m) => (
+                  <SelectItem key={m} value={m}>
+                    {monthLabel(m)}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
             <div className="ml-auto flex flex-wrap gap-2">
               {view === "approvals" && canPay && (
                 <Button variant="outline" size="sm" asChild>

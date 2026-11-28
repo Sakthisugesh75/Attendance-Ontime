@@ -7,7 +7,8 @@ import type { teamToday } from "@/lib/attendance/dashboard";
 import type { Overview } from "@/lib/attendance/overview";
 import { formatClock, formatDate, formatDuration, monthLabel } from "@/lib/time";
 import { AttentionPanel } from "./attention-panel";
-import { HoursHeatmap, LateByEmployeeChart, MixDonut, TrendChart } from "./overview-charts";
+// Loaded on demand (recharts is large); see overview-charts-lazy.tsx.
+import { HoursHeatmap, LateByEmployeeChart, MixDonut, TrendChart } from "./overview-charts-lazy";
 
 const BODY = "px-4 py-4 sm:px-6 sm:py-5";
 

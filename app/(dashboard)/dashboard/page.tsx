@@ -1,10 +1,12 @@
 import { LiveRefresh } from "@/components/layout/live-refresh";
 import { CalendarCheck, CalendarDays, ClockAlert, Hourglass, Link2Off, LogIn } from "lucide-react";
+import { ArrivalPunch } from "@/components/attendance/arrival-punch";
 import { MonthCalendar } from "@/components/attendance/month-calendar";
 import { PunchCard } from "@/components/attendance/punch-card";
 import { StatCard } from "@/components/attendance/stat-card";
 import { TodayReportCard } from "@/components/daily-reports/today-report-card";
 import { AnnouncementsCard } from "@/components/dashboard/announcements-card";
+import { GetAppBanner } from "@/components/dashboard/get-app-banner";
 import { CelebrationsCard } from "@/components/dashboard/celebrations-card";
 import { OrgOverview } from "@/components/dashboard/org-overview";
 import { QuickActions } from "@/components/dashboard/quick-actions";
@@ -15,6 +17,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { employeeDashboard, teamToday } from "@/lib/attendance/dashboard";
 import { monthOverview } from "@/lib/attendance/overview";
 import { hasPermission, requireUser, scopeEmployeeIds } from "@/lib/session";
+import { androidApp } from "@/lib/mobile-app";
 import { getSetting } from "@/lib/settings";
 import { formatClock, formatDate, formatDuration, istDate, monthLabel, WEEKDAYS, weekdayOf } from "@/lib/time";
 
@@ -38,12 +41,13 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
   const month = /^\d{4}-(0[1-9]|1[0-2])$/.test(params.month ?? "") && params.month! <= currentMonth ? params.month! : currentMonth;
 
   const reach = manager ? await scopeEmployeeIds(user) : [];
-  const [mine, overview, team, geofence, punch] = await Promise.all([
+  const [mine, overview, team, geofence, punch, apk] = await Promise.all([
     user.employeeId ? employeeDashboard(user.employeeId) : null,
     manager ? monthOverview(month, reach) : null,
     manager && month === currentMonth ? teamToday(reach) : null,
     getSetting("geofence"),
     getSetting("punch"),
+    androidApp(),
   ]);
   const firstName = user.name.split(" ")[0];
 
@@ -54,6 +58,7 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
         <PunchCard today={mine.today} geofenceEnabled={geofence.enabled} selfieRequired={punch.selfieRequired} writesReports={user.writesReports} />
         <QuickActions stacked writesReports={user.writesReports} />
       </div>
+      {geofence.enabled && <ArrivalPunch office={{ lat: geofence.lat, lng: geofence.lng, radiusMeters: geofence.radiusMeters }} date={mine.today.date} punchedIn={!!mine.today.punchInAt} />}
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
         <StatCard icon={LogIn} label="Avg in-time" value={mine.stats.avgInMinutes !== null ? formatClock(mine.stats.avgInMinutes) : "—"} hint={monthLabel(mine.month)} />
         <StatCard icon={Hourglass} label="Avg hours / day" value={mine.stats.avgWorkedMinutes !== null ? formatDuration(mine.stats.avgWorkedMinutes) : "—"} hint="Completed days" />
@@ -74,19 +79,28 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
     <div className="space-y-6 lg:space-y-8">
       <div className="rise flex items-start justify-between gap-3">
         <div className="flex min-w-0 items-center gap-3 sm:gap-4">
-          <Illustration name={greetingArt()} size={44} float className="size-11 sm:size-16" />
+          <Illustration name={greetingArt()} size={44} float priority className="size-11 sm:size-16" />
           <div className="min-w-0">
-          <h2 className="text-m-title text-ink sm:text-[32px] sm:leading-10 sm:tracking-[-0.025em]">
-            {greeting()}, {firstName}
-          </h2>
-          <p className="mt-1 text-m-meta text-ink-2 sm:text-body">{user.roleName}</p>
+            <h2 className="text-m-title text-ink sm:text-[32px] sm:leading-10 sm:tracking-[-0.025em]">
+              {greeting()}, {firstName}
+            </h2>
+            <p className="mt-1 text-m-meta text-ink-2 tabular-nums sm:text-body">
+              {user.roleName}
+              {/* Phones: the date sits here instead of in the chip, so the greeting keeps its width. */}
+              <span className="sm:hidden">
+                {" · "}
+                {WEEKDAYS[weekdayOf(today)]?.slice(0, 3)}, {formatDate(today).slice(0, 6)}
+              </span>
+            </p>
           </div>
         </div>
-        <span className="glass inline-flex h-10 shrink-0 items-center gap-1.5 rounded-full px-4 text-[13px] font-medium text-ink tabular-nums">
+        <span className="glass inline-flex h-10 shrink-0 items-center gap-1.5 rounded-full px-4 text-[13px] font-medium text-ink tabular-nums max-sm:hidden">
           <CalendarDays aria-hidden className="size-4 text-ink-3" />
           {WEEKDAYS[weekdayOf(today)]?.slice(0, 3)}, {formatDate(today).slice(0, 6)}
         </span>
       </div>
+
+      {apk && <GetAppBanner version={apk.version} />}
 
       {overview ? (
         myDay ? (

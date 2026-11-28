@@ -1,5 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Outfit } from "next/font/google";
+import { AppUpdate } from "@/components/layout/app-update";
+import { NativeBridge } from "@/components/layout/native-bridge";
 import { ServiceWorker } from "@/components/layout/service-worker";
 import { ThemeProvider } from "@/components/layout/theme-provider";
 import { Toaster } from "@/components/ui/sonner";
@@ -34,8 +36,10 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
           <TooltipProvider delayDuration={300}>{children}</TooltipProvider>
           <Toaster richColors position="top-center" />
+          <AppUpdate />
         </ThemeProvider>
         <ServiceWorker />
+        <NativeBridge />
       </body>
     </html>
   );

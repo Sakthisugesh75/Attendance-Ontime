@@ -28,7 +28,7 @@ const FLAG_LABEL: Record<string, string> = {
   HALF_DAY_LEAVE: "Half-day leave",
   PERMISSION_USED: "Permission used",
 };
-const SOURCE_LABEL: Record<string, string> = { WEB: "Punched in the app", IMPORT: "Excel import", MANUAL: "Edited by HR" };
+const SOURCE_LABEL: Record<string, string> = { WEB: "Punched in the app", IMPORT: "Excel import", MANUAL: "Edited by HR", ARRIVAL: "Arrival notification" };
 const ACTION_LABEL: Record<string, string> = { CREATE: "Created", UPDATE: "Edited", BULK_MARK: "Bulk marked", IMPORT: "Imported", UNDO_IMPORT: "Import undone" };
 const REQUEST_LABEL: Record<string, string> = { LEAVE: "Leave", WFH: "Work from home", PERMISSION: "Permission", ON_DUTY: "On duty", REGULARIZATION: "Regularization" };
 

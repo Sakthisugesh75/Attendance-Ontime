@@ -26,7 +26,7 @@ export interface DayFacts {
   /** Shift start for that weekday (minutes), null when the shift has no timing */
   shiftStart: number | null;
   hasRecord: boolean;
-  source: "WEB" | "IMPORT" | "MANUAL" | null;
+  source: "WEB" | "IMPORT" | "MANUAL" | "ARRIVAL" | null;
   overridden: boolean;
 }
 

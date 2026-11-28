@@ -1,8 +1,10 @@
 import { PageHeader } from "@/components/layout/page-header";
 import { BackupSection } from "@/components/settings/backup-section";
+import { MobileAppSection } from "@/components/settings/mobile-app-section";
 import { ExportFormatSection } from "@/components/settings/export-format-section";
 import { ReportFormsSection } from "@/components/settings/report-forms-section";
 import { listBackups } from "@/lib/backup";
+import { androidApp } from "@/lib/mobile-app";
 import { CompanySection } from "@/components/settings/company-section";
 import { LeaveTypesSection } from "@/components/settings/leave-types-section";
 import { OrganisationSection } from "@/components/settings/organisation-section";
@@ -17,12 +19,20 @@ import { companyData, exportFormatData, reportFormsData, leaveTypesData, organis
 
 export const metadata = { title: "Settings" };
 
+/** The stored Android app, including a file staff can't use, so Settings can say why. */
+async function mobileApp() {
+  const app = await androidApp({ includeBroken: true });
+  return { app, problem: app?.problem ?? null };
+}
+
 async function Section({ tab, isSuperAdmin }: { tab: SettingsTab; isSuperAdmin: boolean }) {
   switch (tab) {
     case "report-forms":
       return <ReportFormsSection data={await reportFormsData()} />;
     case "exports":
       return <ExportFormatSection data={await exportFormatData()} />;
+    case "mobile-app":
+      return <MobileAppSection {...await mobileApp()} />;
     case "backup":
       return <BackupSection backups={isSuperAdmin ? await listBackups() : []} isSuperAdmin={isSuperAdmin} />;
     case "company":

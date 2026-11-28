@@ -13,7 +13,7 @@ const cpanel = process.argv.includes("--cpanel");
 const out = path.join(privateDir("exports"), cpanel ? "attendance-cpanel.tgz" : "attendance-deploy.tgz");
 const exclude = [
   "node_modules", ...(cpanel ? ["./.next/cache", "./.next/trace"] : [".next"]), ".next-*", "test-results", "playwright-report", "storage", "backups",
-  ".env", ".env.local", ".serve.lock", "tsconfig.tsbuildinfo", "docs", ".q-tmp.cjs", ".agents", ".claude", "skills-lock.json",
+  ".env", ".env.local", ".serve.lock", "tsconfig.tsbuildinfo", "docs", ".q-tmp.cjs", ".agents", ".claude", "skills-lock.json", "mobile",
 ];
 const args = [...(process.platform === "win32" ? ["--no-fflags", "--no-xattrs"] : []), "-czf", out, ...exclude.flatMap((e) => ["--exclude", e]), "."];
 // Windows: use the built-in bsdtar (GNU tar from Git Bash reads "C:…" as a remote host).

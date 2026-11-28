@@ -36,7 +36,7 @@ export function BottomNav({ access }: { access: NavAccess }) {
   // Icon-only circles in a floating glass dock; the name stays for screen readers and tests.
   const item = "relative grid size-12 place-items-center rounded-full border transition-colors duration-[120ms] outline-none focus-visible:shadow-[var(--ad-focus)]";
   return (
-    <nav aria-label="Main" className="glass fixed inset-x-3 bottom-[max(0.75rem,env(safe-area-inset-bottom))] z-30 flex h-[62px] items-center justify-between rounded-full px-[7px] md:hidden">
+    <nav aria-label="Main" className="glass fixed inset-x-3 bottom-[max(0.75rem,var(--inset-bottom))] z-30 flex h-[62px] items-center justify-between rounded-full px-[7px] md:hidden">
       {tabs.map((t) => {
         const active = pathname === t.href || pathname.startsWith(`${t.href}/`);
         return (

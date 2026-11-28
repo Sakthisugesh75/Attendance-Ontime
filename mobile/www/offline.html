@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Can't reach Attendance</title>
+  <!--
+    Shown by the native app when the server can't be reached. It can't load the web app's CSS, so
+    the token values below are copied from app/styles/design-tokens.css (v4 Glass). Keep in sync.
+  -->
+  <style>
+    :root {
+      --canvas: #f5ecd6; --glow-1: #ffd66b; --glow-2: #ffbe98; --glow-3: #bfe6d4;
+      --surface: rgba(255, 255, 255, 0.6); --sunken: #f6efdf; --glass-edge: rgba(255, 255, 255, 0.9);
+      --text: #151410; --text-2: #4f4b42; --text-3: #6e6858; --brand: #151410; --brand-fg: #ffffff;
+      --shadow-card: inset 0 0 0 1px var(--glass-edge), 0 2px 6px rgba(120, 88, 30, 0.05), 0 24px 56px -26px rgba(120, 88, 30, 0.38);
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --canvas: #15130f; --glow-1: #6b5114; --glow-2: #5a2f1f; --glow-3: #17463a;
+        --surface: rgba(40, 36, 30, 0.58); --sunken: #24211b; --glass-edge: rgba(255, 255, 255, 0.08);
+        --text: #f6f1e6; --text-2: #cdc5b3; --text-3: #a0977f; --brand: #f6f1e6; --brand-fg: #15130f;
+        --shadow-card: inset 0 0 0 1px var(--glass-edge), 0 2px 6px rgba(0, 0, 0, 0.25), 0 24px 56px -26px rgba(0, 0, 0, 0.75);
+      }
+    }
+    * { box-sizing: border-box; margin: 0; }
+    html, body { min-height: 100%; }
+    body {
+      font-family: Outfit, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+      color: var(--text);
+      background:
+        radial-gradient(560px 460px at 30% -6%, color-mix(in srgb, var(--glow-1) 75%, transparent), transparent 70%),
+        radial-gradient(520px 440px at 104% 42%, color-mix(in srgb, var(--glow-2) 70%, transparent), transparent 70%),
+        radial-gradient(560px 480px at -6% 104%, color-mix(in srgb, var(--glow-3) 75%, transparent), transparent 70%),
+        var(--canvas);
+      background-attachment: fixed;
+      display: grid; place-items: center; min-height: 100dvh;
+      padding: max(40px, env(safe-area-inset-top)) 16px max(40px, env(safe-area-inset-bottom));
+    }
+    .card {
+      width: 100%; max-width: 384px; text-align: center; padding: 40px 24px;
+      background: var(--surface); box-shadow: var(--shadow-card); border-radius: 28px;
+      -webkit-backdrop-filter: blur(18px) saturate(1.4); backdrop-filter: blur(18px) saturate(1.4);
+    }
+    .icon { width: 64px; height: 64px; margin: 0 auto; border-radius: 9999px; background: var(--sunken); display: grid; place-items: center; color: var(--text-3); }
+    h1 { margin-top: 16px; font-size: 18px; line-height: 24px; font-weight: 500; }
+    p { margin-top: 8px; font-size: 14px; line-height: 20px; color: var(--text-2); }
+    button {
+      margin-top: 24px; height: 48px; padding: 0 24px; border: 0; border-radius: 9999px; font: inherit;
+      font-size: 16px; font-weight: 500; background: var(--brand); color: var(--brand-fg); cursor: pointer;
+      transition: transform 120ms cubic-bezier(.2,.7,.2,1);
+    }
+    button:active { transform: translateY(1px); }
+    button:focus-visible { outline: none; box-shadow: 0 0 0 2px var(--canvas), 0 0 0 4px var(--brand); }
+    .hint { margin-top: 12px; font-size: 13px; line-height: 18px; color: var(--text-3); }
+  </style>
+</head>
+<body>
+  <main class="card" aria-live="polite">
+    <span class="icon" aria-hidden="true">
+      <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h.01"/><path d="M8.5 16.43a5 5 0 0 1 7 0"/><path d="M5 12.86a10 10 0 0 1 5.17-2.69"/><path d="M19 12.86a10 10 0 0 0-1.83-1.35"/><path d="M2 8.82a15 15 0 0 1 4.18-2.65"/><path d="M22 8.82a15 15 0 0 0-11.29-3.76"/><path d="m2 2 20 20"/></svg>
+    </span>
+    <h1>Can't reach Attendance</h1>
+    <p>Punches are recorded with the server's time, so you need a connection to punch in or out. Check your internet and try again.</p>
+    <button type="button" id="retry">Try again</button>
+    <p class="hint" id="hint">The app will also retry by itself when you're back online.</p>
+  </main>
+  <script src="server.js"></script>
+  <script>
+    (function () {
+      var target = (window.ATTENDANCE_SERVER_URL || "") + "/dashboard";
+      var btn = document.getElementById("retry");
+      function retry() {
+        btn.textContent = "Connecting…";
+        btn.setAttribute("aria-busy", "true");
+        location.replace(target);
+      }
+      btn.addEventListener("click", retry);
+      window.addEventListener("online", retry);
+      var splash = window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.SplashScreen;
+      if (splash) splash.hide();
+    })();
+  </script>
+</body>
+</html>
